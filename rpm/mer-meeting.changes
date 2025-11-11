@@ -8,6 +8,11 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
+* Mon Nov 11 2025 Poulpe <poulpe@example.com> 1.3.1-1
+- Add About page with app information and credits
+- Made with love for Sailfish OS community
+- Include GitHub link and feature list
+
 * Mon Nov 11 2025 Poulpe <poulpe@example.com> 1.3.0-1
 - Add monthly grouping in meeting list with SectionHeaders
 - Update meeting title format to include date

@@ -36,6 +36,7 @@ OTHER_FILES += qml/mer-meeting.qml \
     qml/pages/MeetingListPage.qml \
     qml/pages/MeetingSummaryPage.qml \
     qml/pages/MeetingLogPage.qml \
+    qml/pages/AboutPage.qml \
     rpm/mer-meeting.spec \
     rpm/mer-meeting.yaml \
     translations/*.ts \

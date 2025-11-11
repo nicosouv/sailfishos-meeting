@@ -10,6 +10,13 @@ Page {
         id: listView
         anchors.fill: parent
 
+        PullDownMenu {
+            MenuItem {
+                text: qsTr("About")
+                onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
+            }
+        }
+
         header: PageHeader {
             title: qsTr("Sailfish OS Meetings")
         }

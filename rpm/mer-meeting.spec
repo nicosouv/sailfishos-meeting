@@ -1,6 +1,6 @@
 Name:       mer-meeting
 Summary:    Sailfish OS Meeting Logs Viewer
-Version:    1.3.0
+Version:    1.3.1
 Release:    1
 Group:      Applications/Internet
 License:    BSD-3-Clause
