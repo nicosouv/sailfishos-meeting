@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     QQuickView *view = SailfishApp::createView();
 
     // Register QML types
-    qmlRegisterType<Meeting>("harbour.mer.meeting", 1, 0, "Meeting");
+    qmlRegisterUncreatableType<Meeting>("harbour.mer.meeting", 1, 0, "Meeting", "Meeting objects are created by MeetingManager");
     qmlRegisterType<MeetingManager>("harbour.mer.meeting", 1, 0, "MeetingManager");
 
     // Create and expose MeetingManager singleton
