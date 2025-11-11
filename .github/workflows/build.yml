@@ -18,14 +18,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build RPM for ${{ matrix.arch }}
-        run: |
-          docker run --rm \
-            -v $PWD:/source \
-            -w /source \
-            coderus/sailfishos-platform-sdk:latest \
-            bash -c "
-              mb2 -t SailfishOS-latest-${{ matrix.arch }} build
-            "
+        uses: R1tschY/sailfish-build-rpm@v1
+        with:
+          arch: ${{ matrix.arch }}
+          release: '4.5.0.24'
+          fix-version: false
 
       - name: Upload RPM artifacts
         uses: actions/upload-artifact@v3
