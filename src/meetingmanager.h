@@ -5,7 +5,9 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QList>
+#include <QSettings>
 #include "meeting.h"
+#include "meetingstatistics.h"
 
 class MeetingManager : public QObject
 {
@@ -24,12 +26,17 @@ public:
     Q_INVOKABLE QVariantList getAvailableYears();
     Q_INVOKABLE QVariantList parseTopicsFromHtml(const QString &html);
     Q_INVOKABLE QVariantList parseIrcMessagesFromHtml(const QString &html);
+    Q_INVOKABLE MeetingStatistics* calculateStatistics(const QVariantList &messages);
+    Q_INVOKABLE bool isFavorite(const QString &meetingId) const;
+    Q_INVOKABLE void toggleFavorite(const QString &meetingId);
+    Q_INVOKABLE QStringList getFavorites() const;
 
 signals:
     void meetingsLoaded(QVariantList meetings);
     void loadingChanged();
     void errorChanged();
     void htmlContentLoaded(QString content);
+    void favoritesChanged();
 
 private slots:
     void onMeetingListReplyFinished();
@@ -37,6 +44,7 @@ private slots:
 
 private:
     QNetworkAccessManager *m_networkManager;
+    QSettings *m_settings;
     bool m_loading;
     QString m_error;
 

@@ -20,13 +20,15 @@ SOURCES += src/mer-meeting.cpp \
     src/meetingmanager.cpp \
     src/meeting.cpp \
     src/ircmessage.cpp \
-    src/meetingtopic.cpp
+    src/meetingtopic.cpp \
+    src/meetingstatistics.cpp
 
 HEADERS += \
     src/meetingmanager.h \
     src/meeting.h \
     src/ircmessage.h \
-    src/meetingtopic.h
+    src/meetingtopic.h \
+    src/meetingstatistics.h
 
 OTHER_FILES += qml/mer-meeting.qml \
     qml/cover/CoverPage.qml \

@@ -1,13 +1,17 @@
 #include "meetingmanager.h"
 #include "ircmessage.h"
 #include "meetingtopic.h"
+#include "meetingstatistics.h"
 #include <QRegularExpression>
 #include <QDebug>
 #include <QDateTime>
+#include <QMap>
+#include <QTime>
 
 MeetingManager::MeetingManager(QObject *parent)
     : QObject(parent)
     , m_networkManager(new QNetworkAccessManager(this))
+    , m_settings(new QSettings(this))
     , m_loading(false)
 {
 }
@@ -231,4 +235,113 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
     }
 
     return messages;
+}
+
+MeetingStatistics* MeetingManager::calculateStatistics(const QVariantList &messages)
+{
+    MeetingStatistics *stats = new MeetingStatistics(this);
+
+    if (messages.isEmpty()) {
+        return stats;
+    }
+
+    // Count messages and track participants
+    QMap<QString, int> participantCounts;
+    int topicCount = 0;
+    int actionCount = 0;
+    QString firstTimestamp;
+    QString lastTimestamp;
+
+    for (const QVariant &var : messages) {
+        IrcMessage *msg = qvariant_cast<IrcMessage*>(var);
+        if (!msg) continue;
+
+        // Track first and last timestamp
+        if (firstTimestamp.isEmpty()) {
+            firstTimestamp = msg->timestamp();
+        }
+        lastTimestamp = msg->timestamp();
+
+        // Count by participant
+        if (!msg->username().isEmpty()) {
+            participantCounts[msg->username()]++;
+        }
+
+        // Count topics
+        if (msg->isTopic()) {
+            topicCount++;
+        }
+
+        // Count actions
+        if (msg->isAction()) {
+            actionCount++;
+        }
+    }
+
+    // Set message count
+    stats->setMessageCount(messages.count());
+
+    // Set participant count
+    stats->setParticipantCount(participantCounts.count());
+
+    // Find top contributor
+    QString topContributor;
+    int topCount = 0;
+    for (auto it = participantCounts.constBegin(); it != participantCounts.constEnd(); ++it) {
+        if (it.value() > topCount) {
+            topCount = it.value();
+            topContributor = it.key();
+        }
+    }
+    stats->setTopContributor(topContributor, topCount);
+
+    // Calculate duration
+    if (!firstTimestamp.isEmpty() && !lastTimestamp.isEmpty()) {
+        QTime start = QTime::fromString(firstTimestamp, "HH:mm:ss");
+        QTime end = QTime::fromString(lastTimestamp, "HH:mm:ss");
+
+        if (start.isValid() && end.isValid()) {
+            int seconds = start.secsTo(end);
+            int hours = seconds / 3600;
+            int minutes = (seconds % 3600) / 60;
+
+            QString duration;
+            if (hours > 0) {
+                duration = QString("%1h %2m").arg(hours).arg(minutes);
+            } else {
+                duration = QString("%1m").arg(minutes);
+            }
+            stats->setDuration(duration);
+        }
+    }
+
+    stats->setTopicCount(topicCount);
+    stats->setActionCount(actionCount);
+
+    return stats;
+}
+
+bool MeetingManager::isFavorite(const QString &meetingId) const
+{
+    QStringList favorites = m_settings->value("favorites").toStringList();
+    return favorites.contains(meetingId);
+}
+
+void MeetingManager::toggleFavorite(const QString &meetingId)
+{
+    QStringList favorites = m_settings->value("favorites").toStringList();
+
+    if (favorites.contains(meetingId)) {
+        favorites.removeAll(meetingId);
+    } else {
+        favorites.append(meetingId);
+    }
+
+    m_settings->setValue("favorites", favorites);
+    emit favoritesChanged();
+}
+
+QStringList MeetingManager::getFavorites() const
+{
+    return m_settings->value("favorites").toStringList();
 }

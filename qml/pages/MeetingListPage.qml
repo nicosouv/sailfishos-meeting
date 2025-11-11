@@ -18,6 +18,12 @@ Page {
         onMeetingsLoaded: {
             listView.model = meetings
         }
+        onFavoritesChanged: {
+            // Force model refresh to update favorite indicators
+            var temp = listView.model
+            listView.model = null
+            listView.model = temp
+        }
     }
 
     SilicaFlickable {
@@ -69,27 +75,41 @@ Page {
                 id: delegate
                 contentHeight: Theme.itemSizeLarge
 
-                Column {
+                Row {
                     anchors.verticalCenter: parent.verticalCenter
                     x: Theme.horizontalPageMargin
                     width: parent.width - 2 * Theme.horizontalPageMargin
+                    spacing: Theme.paddingMedium
 
                     Label {
-                        text: modelData.title
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                        text: meetingManager.isFavorite(modelData.filename) ? "★" : ""
+                        font.pixelSize: Theme.fontSizeLarge
+                        color: Theme.highlightColor
+                        width: visible ? Theme.iconSizeSmall : 0
+                        visible: text !== ""
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    Label {
-                        text: modelData.date
-                        font.pixelSize: Theme.fontSizeSmall
-                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
-                    }
+                    Column {
+                        width: parent.width - (meetingManager.isFavorite(modelData.filename) ? Theme.iconSizeSmall + Theme.paddingMedium : 0)
 
-                    Label {
-                        text: modelData.time
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                        Label {
+                            text: modelData.title
+                            font.pixelSize: Theme.fontSizeMedium
+                            color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                        }
+
+                        Label {
+                            text: modelData.date
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                        }
+
+                        Label {
+                            text: modelData.time
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                        }
                     }
                 }
 
