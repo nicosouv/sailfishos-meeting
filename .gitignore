@@ -39,8 +39,7 @@ CMakeLists.txt.user*
 
 .DS_Store
 
-# RPM build artifacts (keep .yaml and .changes)
-/rpm/*.spec
+# RPM build artifacts (keep .yaml, .changes and .spec)
 /RPMS/
 /SRPMS/
 /BUILDROOT/
