@@ -7,6 +7,7 @@ Page {
 
     property var meeting
     property string htmlContent: ""
+    property var topics: []
 
     allowedOrientations: Orientation.All
 
@@ -18,6 +19,7 @@ Page {
         target: meetingManager
         onHtmlContentLoaded: {
             htmlContent = content
+            topics = meetingManager.parseTopicsFromHtml(content)
         }
     }
 
@@ -43,20 +45,35 @@ Page {
         Column {
             id: column
             width: parent.width
+            spacing: Theme.paddingMedium
 
             PageHeader {
-                title: meeting.title
+                title: qsTr("Meeting Summary")
             }
 
-            Label {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                text: meeting.date + " - " + meeting.time
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.secondaryColor
+            // Meeting info
+            Column {
+                width: parent.width
+                spacing: Theme.paddingSmall
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    text: meeting.date
+                    font.pixelSize: Theme.fontSizeLarge
+                    color: Theme.highlightColor
+                }
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    text: meeting.time
+                    font.pixelSize: Theme.fontSizeSmall
+                    color: Theme.secondaryColor
+                }
             }
 
-            Item { width: 1; height: Theme.paddingLarge }
+            Item { width: 1; height: Theme.paddingMedium }
 
             BusyIndicator {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -64,46 +81,33 @@ Page {
                 size: BusyIndicatorSize.Large
             }
 
-            Label {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                visible: htmlContent !== ""
-                text: formatHtmlContent(htmlContent)
-                textFormat: Text.RichText
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSizeSmall
-                linkColor: Theme.highlightColor
-                onLinkActivated: Qt.openUrlExternally(link)
+            // Topics list
+            Repeater {
+                model: topics
+
+                Column {
+                    width: parent.width
+                    spacing: Theme.paddingSmall
+
+                    SectionHeader {
+                        text: modelData.title
+                    }
+
+                    Label {
+                        x: Theme.horizontalPageMargin * 2
+                        width: parent.width - 4 * Theme.horizontalPageMargin
+                        visible: modelData.items.length === 0
+                        text: qsTr("No items discussed")
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.secondaryColor
+                        font.italic: true
+                    }
+                }
             }
 
             Item { width: 1; height: Theme.paddingLarge }
         }
 
         VerticalScrollDecorator {}
-    }
-
-    function formatHtmlContent(html) {
-        if (html === "") return ""
-
-        // Extract content between body tags
-        var bodyStart = html.indexOf("<body>")
-        var bodyEnd = html.indexOf("</body>")
-        if (bodyStart === -1 || bodyEnd === -1) return html
-
-        var content = html.substring(bodyStart + 6, bodyEnd)
-
-        // Clean up some HTML tags for better QML Label rendering
-        content = content.replace(/<h1>/g, "<h1><font size='5'><b>")
-        content = content.replace(/<\/h1>/g, "</b></font></h1>")
-        content = content.replace(/<h2>/g, "<h2><font size='4'><b>")
-        content = content.replace(/<\/h2>/g, "</b></font></h2>")
-        content = content.replace(/<h3>/g, "<h3><font size='3'><b>")
-        content = content.replace(/<\/h3>/g, "</b></font></h3>")
-
-        // Add some spacing
-        content = content.replace(/<\/li>/g, "</li><br/>")
-        content = content.replace(/<\/p>/g, "</p><br/>")
-
-        return content
     }
 }

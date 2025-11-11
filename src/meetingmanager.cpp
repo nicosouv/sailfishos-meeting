@@ -1,4 +1,6 @@
 #include "meetingmanager.h"
+#include "ircmessage.h"
+#include "meetingtopic.h"
 #include <QRegularExpression>
 #include <QDebug>
 #include <QDateTime>
@@ -31,8 +33,8 @@ QVariantList MeetingManager::getAvailableYears()
     QVariantList years;
     int currentYear = QDateTime::currentDateTime().date().year();
 
-    // From 2024 to current year
-    for (int year = currentYear; year >= 2024; --year) {
+    // From 2020 to current year
+    for (int year = currentYear; year >= 2020; --year) {
         years.append(year);
     }
 
@@ -129,4 +131,104 @@ void MeetingManager::onHtmlContentReplyFinished()
     reply->deleteLater();
 
     emit htmlContentLoaded(content);
+}
+
+QVariantList MeetingManager::parseTopicsFromHtml(const QString &html)
+{
+    QVariantList topics;
+
+    // Extract topics from ordered list items
+    QRegularExpression topicRe("<li><a href=\"#topic-\\d+\">([^<]+)</a>");
+    QRegularExpressionMatchIterator i = topicRe.globalMatch(html);
+
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        QString topicTitle = match.captured(1);
+
+        // Clean HTML entities
+        topicTitle.replace("&nbsp;", " ");
+        topicTitle.replace("&lt;", "<");
+        topicTitle.replace("&gt;", ">");
+        topicTitle.replace("&amp;", "&");
+
+        QStringList items;
+        MeetingTopic *topic = new MeetingTopic(topicTitle, items, this);
+        topics.append(QVariant::fromValue(topic));
+    }
+
+    return topics;
+}
+
+QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
+{
+    QVariantList messages;
+
+    // Extract text from <pre> tag
+    QRegularExpression preRe("<pre>(.*)</pre>", QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpressionMatch preMatch = preRe.match(html);
+
+    if (!preMatch.hasMatch()) {
+        return messages;
+    }
+
+    QString preContent = preMatch.captured(1);
+
+    // Split into lines
+    QStringList lines = preContent.split('\n', QString::SkipEmptyParts);
+
+    for (const QString &line : lines) {
+        // Parse IRC message format: HH:MM:SS <username> message
+        // or: HH:MM:SS * username action
+        // or: HH:MM:SS <username> #command
+
+        QString cleanLine = line;
+        // Remove HTML tags
+        cleanLine.replace(QRegularExpression("<[^>]*>"), "");
+        // Decode HTML entities
+        cleanLine.replace("&lt;", "<");
+        cleanLine.replace("&gt;", ">");
+        cleanLine.replace("&amp;", "&");
+        cleanLine.replace("&nbsp;", " ");
+
+        // Match timestamp and rest
+        QRegularExpression lineRe("^(\\d{2}:\\d{2}:\\d{2})\\s+(.+)$");
+        QRegularExpressionMatch lineMatch = lineRe.match(cleanLine);
+
+        if (!lineMatch.hasMatch()) {
+            continue;
+        }
+
+        QString timestamp = lineMatch.captured(1);
+        QString rest = lineMatch.captured(2);
+
+        QString username;
+        QString message;
+
+        // Check for action (* username does something)
+        if (rest.startsWith("* ")) {
+            int spacePos = rest.indexOf(' ', 2);
+            if (spacePos > 0) {
+                username = rest.mid(2, spacePos - 2);
+                message = rest.mid(spacePos + 1);
+            }
+        }
+        // Check for regular message (<username> message)
+        else if (rest.startsWith('<')) {
+            int endBracket = rest.indexOf('>');
+            if (endBracket > 0) {
+                username = rest.mid(1, endBracket - 1);
+                message = rest.mid(endBracket + 2);
+            }
+        }
+        // System message
+        else {
+            username = "";
+            message = rest;
+        }
+
+        IrcMessage *msg = new IrcMessage(timestamp, username, message, this);
+        messages.append(QVariant::fromValue(msg));
+    }
+
+    return messages;
 }

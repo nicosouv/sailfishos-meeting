@@ -38,6 +38,8 @@
 #include <QQmlContext>
 #include "meetingmanager.h"
 #include "meeting.h"
+#include "ircmessage.h"
+#include "meetingtopic.h"
 
 int main(int argc, char *argv[])
 {
@@ -49,6 +51,8 @@ int main(int argc, char *argv[])
 
     // Register QML types
     qmlRegisterUncreatableType<Meeting>("harbour.mer.meeting", 1, 0, "Meeting", "Meeting objects are created by MeetingManager");
+    qmlRegisterUncreatableType<IrcMessage>("harbour.mer.meeting", 1, 0, "IrcMessage", "IrcMessage objects are created by MeetingManager");
+    qmlRegisterUncreatableType<MeetingTopic>("harbour.mer.meeting", 1, 0, "MeetingTopic", "MeetingTopic objects are created by MeetingManager");
     qmlRegisterType<MeetingManager>("harbour.mer.meeting", 1, 0, "MeetingManager");
 
     // Create and expose MeetingManager singleton

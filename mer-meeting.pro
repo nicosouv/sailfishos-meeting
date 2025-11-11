@@ -18,11 +18,15 @@ QT += network
 
 SOURCES += src/mer-meeting.cpp \
     src/meetingmanager.cpp \
-    src/meeting.cpp
+    src/meeting.cpp \
+    src/ircmessage.cpp \
+    src/meetingtopic.cpp
 
 HEADERS += \
     src/meetingmanager.h \
-    src/meeting.h
+    src/meeting.h \
+    src/ircmessage.h \
+    src/meetingtopic.h
 
 OTHER_FILES += qml/mer-meeting.qml \
     qml/cover/CoverPage.qml \

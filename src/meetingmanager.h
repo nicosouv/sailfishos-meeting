@@ -22,6 +22,8 @@ public:
     Q_INVOKABLE void fetchMeetingsForYear(int year);
     Q_INVOKABLE QString fetchHtmlContent(const QString &url);
     Q_INVOKABLE QVariantList getAvailableYears();
+    Q_INVOKABLE QVariantList parseTopicsFromHtml(const QString &html);
+    Q_INVOKABLE QVariantList parseIrcMessagesFromHtml(const QString &html);
 
 signals:
     void meetingsLoaded(QVariantList meetings);
