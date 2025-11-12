@@ -15,7 +15,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Mer Meeting - Logs</source>
+        <source>SailfishOS Meetings - Logs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -35,7 +35,7 @@ CoverBackground {
     Label {
         id: label
         anchors.centerIn: parent
-        text: qsTr("Mer Meeting")
+        text: qsTr("SailfishOS Meetings")
     }
 }
 

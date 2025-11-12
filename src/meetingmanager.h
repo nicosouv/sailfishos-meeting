@@ -30,6 +30,8 @@ public:
     Q_INVOKABLE bool isFavorite(const QString &meetingId) const;
     Q_INVOKABLE void toggleFavorite(const QString &meetingId);
     Q_INVOKABLE QStringList getFavorites() const;
+    Q_INVOKABLE bool isRead(const QString &meetingId) const;
+    Q_INVOKABLE void markAsRead(const QString &meetingId);
 
 signals:
     void meetingsLoaded(QVariantList meetings);
@@ -37,6 +39,7 @@ signals:
     void errorChanged();
     void htmlContentLoaded(QString content);
     void favoritesChanged();
+    void readStatusChanged();
 
 private slots:
     void onMeetingListReplyFinished();

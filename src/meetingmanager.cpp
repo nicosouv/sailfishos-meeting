@@ -345,3 +345,20 @@ QStringList MeetingManager::getFavorites() const
 {
     return m_settings->value("favorites").toStringList();
 }
+
+bool MeetingManager::isRead(const QString &meetingId) const
+{
+    QStringList readMeetings = m_settings->value("readMeetings").toStringList();
+    return readMeetings.contains(meetingId);
+}
+
+void MeetingManager::markAsRead(const QString &meetingId)
+{
+    QStringList readMeetings = m_settings->value("readMeetings").toStringList();
+
+    if (!readMeetings.contains(meetingId)) {
+        readMeetings.append(meetingId);
+        m_settings->setValue("readMeetings", readMeetings);
+        emit readStatusChanged();
+    }
+}

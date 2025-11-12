@@ -1,6 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import harbour.mer.meeting 1.0
+import harbour.sailfishos.meetings 1.0
 
 Page {
     id: page
@@ -46,6 +46,11 @@ Page {
             filterMeetings()
         }
         onFavoritesChanged: {
+            filterMeetings()
+        }
+        onReadStatusChanged: {
+            // Force list refresh
+            listView.model = []
             filterMeetings()
         }
     }
@@ -157,19 +162,27 @@ Page {
                         Label {
                             text: modelData.title
                             font.pixelSize: Theme.fontSizeMedium
-                            color: delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                            color: {
+                                if (meetingManager.isRead(modelData.filename)) {
+                                    return delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                                }
+                                return delegate.highlighted ? Theme.highlightColor : Theme.primaryColor
+                            }
+                            opacity: meetingManager.isRead(modelData.filename) ? 0.6 : 1.0
                         }
 
                         Label {
                             text: modelData.date
                             font.pixelSize: Theme.fontSizeSmall
                             color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                            opacity: meetingManager.isRead(modelData.filename) ? 0.6 : 1.0
                         }
 
                         Label {
                             text: modelData.time
                             font.pixelSize: Theme.fontSizeExtraSmall
                             color: delegate.highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
+                            opacity: meetingManager.isRead(modelData.filename) ? 0.6 : 1.0
                         }
                     }
                 }

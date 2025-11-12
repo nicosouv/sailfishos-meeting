@@ -1,6 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import harbour.mer.meeting 1.0
+import harbour.sailfishos.meetings 1.0
 
 Page {
     id: page

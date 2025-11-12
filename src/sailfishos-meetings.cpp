@@ -45,23 +45,23 @@
 int main(int argc, char *argv[])
 {
     QGuiApplication *app = SailfishApp::application(argc, argv);
-    app->setOrganizationName("mer-meeting");
-    app->setApplicationName("mer-meeting");
+    app->setOrganizationName("sailfishos-meetings");
+    app->setApplicationName("sailfishos-meetings");
 
     QQuickView *view = SailfishApp::createView();
 
     // Register QML types
-    qmlRegisterUncreatableType<Meeting>("harbour.mer.meeting", 1, 0, "Meeting", "Meeting objects are created by MeetingManager");
-    qmlRegisterUncreatableType<IrcMessage>("harbour.mer.meeting", 1, 0, "IrcMessage", "IrcMessage objects are created by MeetingManager");
-    qmlRegisterUncreatableType<MeetingTopic>("harbour.mer.meeting", 1, 0, "MeetingTopic", "MeetingTopic objects are created by MeetingManager");
-    qmlRegisterUncreatableType<MeetingStatistics>("harbour.mer.meeting", 1, 0, "MeetingStatistics", "MeetingStatistics objects are created by MeetingManager");
-    qmlRegisterType<MeetingManager>("harbour.mer.meeting", 1, 0, "MeetingManager");
+    qmlRegisterUncreatableType<Meeting>("harbour.sailfishos.meetings", 1, 0, "Meeting", "Meeting objects are created by MeetingManager");
+    qmlRegisterUncreatableType<IrcMessage>("harbour.sailfishos.meetings", 1, 0, "IrcMessage", "IrcMessage objects are created by MeetingManager");
+    qmlRegisterUncreatableType<MeetingTopic>("harbour.sailfishos.meetings", 1, 0, "MeetingTopic", "MeetingTopic objects are created by MeetingManager");
+    qmlRegisterUncreatableType<MeetingStatistics>("harbour.sailfishos.meetings", 1, 0, "MeetingStatistics", "MeetingStatistics objects are created by MeetingManager");
+    qmlRegisterType<MeetingManager>("harbour.sailfishos.meetings", 1, 0, "MeetingManager");
 
     // Create and expose MeetingManager singleton
     MeetingManager *meetingManager = new MeetingManager(app);
     view->rootContext()->setContextProperty("meetingManager", meetingManager);
 
-    view->setSource(SailfishApp::pathTo("qml/mer-meeting.qml"));
+    view->setSource(SailfishApp::pathTo("qml/sailfishos-meetings.qml"));
     view->show();
 
     return app->exec();

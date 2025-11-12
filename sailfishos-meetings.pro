@@ -10,13 +10,13 @@
 #   - translation filenames have to be changed
 
 # The name of your application
-TARGET = mer-meeting
+TARGET = sailfishos-meetings
 
 CONFIG += sailfishapp
 
 QT += network
 
-SOURCES += src/mer-meeting.cpp \
+SOURCES += src/sailfishos-meetings.cpp \
     src/meetingmanager.cpp \
     src/meeting.cpp \
     src/ircmessage.cpp \
@@ -30,17 +30,17 @@ HEADERS += \
     src/meetingtopic.h \
     src/meetingstatistics.h
 
-OTHER_FILES += qml/mer-meeting.qml \
+OTHER_FILES += qml/sailfishos-meetings.qml \
     qml/cover/CoverPage.qml \
     qml/pages/YearSelectionPage.qml \
     qml/pages/MeetingListPage.qml \
     qml/pages/MeetingSummaryPage.qml \
     qml/pages/MeetingLogPage.qml \
     qml/pages/AboutPage.qml \
-    rpm/mer-meeting.spec \
-    rpm/mer-meeting.yaml \
+    rpm/sailfishos-meetings.spec \
+    rpm/sailfishos-meetings.yaml \
     translations/*.ts \
-    mer-meeting.desktop
+    sailfishos-meetings.desktop
 
 SAILFISHAPP_ICONS = 86x86 108x108 128x128 256x256
 
@@ -52,7 +52,7 @@ CONFIG += sailfishapp_i18n
 # planning to localize your app, remember to comment out the
 # following TRANSLATIONS line. And also do not forget to
 # modify the localized app name in the the .desktop file.
-TRANSLATIONS += translations/mer-meeting-de.ts
+TRANSLATIONS += translations/sailfishos-meetings-de.ts
 
 DISTFILES += \
-    rpm/mer-meeting.changes
+    rpm/sailfishos-meetings.changes

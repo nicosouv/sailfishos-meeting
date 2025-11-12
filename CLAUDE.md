@@ -17,7 +17,7 @@ Sailfish OS application for browsing and reading Sailfish OS community meeting l
 **C++ Backend** (src/):
 - `meetingmanager.h/cpp`: Manages fetching and parsing of meeting data from irclogs.sailfishos.org
 - `meeting.h/cpp`: Data model for individual meetings with Q_PROPERTY exports to QML
-- `mer-meeting.cpp`: Entry point that registers QML types and creates singleton MeetingManager
+- `sailfishos-meetings.cpp`: Entry point that registers QML types and creates singleton MeetingManager
 
 **QML Frontend** (qml/pages/):
 - `YearSelectionPage.qml`: Initial page listing available years (2024+)
@@ -29,7 +29,7 @@ Sailfish OS application for browsing and reading Sailfish OS community meeting l
 
 ```bash
 # Local build with Sailfish SDK
-qmake mer-meeting.pro
+qmake sailfishos-meetings.pro
 make
 
 # Build RPM package for specific architecture

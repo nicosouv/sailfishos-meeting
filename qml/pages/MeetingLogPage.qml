@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import harbour.mer.meeting 1.0
+import harbour.sailfishos.meetings 1.0
+import "../components"
 
 Page {
     id: page
@@ -35,6 +36,7 @@ Page {
 
     Component.onCompleted: {
         meetingManager.fetchHtmlContent(meeting.logUrl)
+        meetingManager.markAsRead(meeting.filename)
         isFavorite = meetingManager.isFavorite(meeting.filename)
     }
 
@@ -209,7 +211,7 @@ Page {
 
             delegate: Item {
                 width: listView.width
-                height: Math.max(messageColumn.height + Theme.paddingSmall, Theme.itemSizeSmall)
+                height: Math.max(contentColumn.height + Theme.paddingMedium * 2, Theme.itemSizeSmall)
 
                 Rectangle {
                     anchors.fill: parent
@@ -220,38 +222,48 @@ Page {
 
                 Row {
                     id: messageRow
-                    width: parent.width - 2 * Theme.paddingSmall
-                    x: Theme.paddingSmall
-                    spacing: Theme.paddingSmall
+                    width: parent.width - Theme.horizontalPageMargin * 2
+                    x: Theme.horizontalPageMargin
+                    y: Theme.paddingMedium
+                    spacing: Theme.paddingMedium
 
-                    // Timestamp
-                    Label {
-                        width: Theme.fontSizeExtraSmall * 5
-                        text: modelData.timestamp
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: Theme.secondaryColor
-                        font.family: "Monospace"
+                    // Avatar
+                    UserAvatar {
+                        id: avatar
+                        username: modelData.username
+                        visible: modelData.username !== ""
+                        anchors.top: parent.top
                     }
 
                     Column {
-                        id: messageColumn
-                        width: parent.width - Theme.fontSizeExtraSmall * 5 - Theme.paddingSmall
-                        spacing: 2
+                        id: contentColumn
+                        width: parent.width - (avatar.visible ? avatar.width + Theme.paddingMedium : 0)
+                        spacing: Theme.paddingSmall
 
-                        // Username (if present)
-                        Label {
-                            visible: modelData.username !== ""
-                            text: modelData.username
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.bold: true
-                            color: modelData.userColor
-                            wrapMode: Text.NoWrap
-                            elide: Text.ElideRight
+                        // Username and timestamp row
+                        Row {
                             width: parent.width
+                            spacing: Theme.paddingMedium
+                            visible: modelData.username !== ""
+
+                            Label {
+                                text: modelData.username
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.bold: true
+                                color: avatar.userColor
+                            }
+
+                            Label {
+                                text: modelData.timestamp
+                                font.pixelSize: Theme.fontSizeExtraSmall
+                                color: Theme.secondaryColor
+                                anchors.baseline: parent.children[0].baseline
+                            }
                         }
 
                         // Message
                         Label {
+                            width: parent.width
                             text: modelData.message
                             font.pixelSize: Theme.fontSizeSmall
                             font.italic: modelData.isAction
@@ -260,8 +272,18 @@ Page {
                                    modelData.isCommand ? Theme.secondaryHighlightColor :
                                    Theme.primaryColor
                             wrapMode: Text.Wrap
-                            width: parent.width
                             textFormat: Text.PlainText
+                        }
+
+                        // System message style (no username)
+                        Label {
+                            visible: modelData.username === ""
+                            width: parent.width
+                            text: modelData.timestamp + " - " + modelData.message
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                            wrapMode: Text.Wrap
+                            font.italic: true
                         }
                     }
                 }

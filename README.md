@@ -1,4 +1,4 @@
-# Mer Meeting - Sailfish OS Meeting Logs Viewer
+# SailfishOS Meetings - Sailfish OS Meeting Logs Viewer
 
 A native Sailfish OS application for browsing and reading Sailfish OS community meeting logs from [irclogs.sailfishos.org](https://irclogs.sailfishos.org/meetings/sailfishos-meeting/).
 
@@ -22,7 +22,7 @@ A native Sailfish OS application for browsing and reading Sailfish OS community 
 ### Local Build
 
 ```bash
-qmake mer-meeting.pro
+qmake sailfishos-meetings.pro
 make
 ```
 
@@ -46,7 +46,7 @@ Download the appropriate RPM for your device from the [Releases](../../releases)
 Install via:
 ```bash
 devel-su
-rpm -i mer-meeting-*.rpm
+rpm -i sailfishos-meetings-*.rpm
 ```
 
 ## CI/CD
