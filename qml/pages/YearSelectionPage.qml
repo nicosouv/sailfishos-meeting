@@ -8,10 +8,15 @@ Page {
 
     allowedOrientations: Orientation.All
 
-    property string nextMeetingDate: meetingManager.getNextMeetingDate()
+    property string nextMeetingDate: ""
     property string nextMeetingDateRaw: ""
 
     Component.onCompleted: {
+        // Load saved date first
+        nextMeetingDate = meetingManager.getNextMeetingDate()
+        console.log("Loaded saved next meeting date:", nextMeetingDate)
+
+        // Then fetch fresh data
         meetingManager.fetchNextMeetingDate()
     }
 

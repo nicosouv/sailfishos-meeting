@@ -33,7 +33,7 @@ Page {
 
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Mer Meeting Logs"
+                    text: "SFOS Meetings"
                     font.pixelSize: Theme.fontSizeLarge
                     font.bold: true
                     color: Theme.highlightColor
@@ -41,7 +41,7 @@ Page {
 
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "v1.3.1"
+                    text: "v1.5.0"
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.secondaryColor
                 }
@@ -84,7 +84,9 @@ Page {
                 Repeater {
                     model: [
                         qsTr("• Browse meetings from 2020 to present"),
-                        qsTr("• Beautiful colored IRC log display"),
+                        qsTr("• Slack-style message display with avatars"),
+                        qsTr("• Track read/unread meetings"),
+                        qsTr("• Next meeting date and calendar integration"),
                         qsTr("• Quick topic navigation"),
                         qsTr("• Search messages and participants"),
                         qsTr("• Mark favorite meetings"),
@@ -145,7 +147,7 @@ Page {
 
                     Label {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "🔗 github.com/nicosouv/mer-meeting"
+                        text: "🔗 github.com/nicosouv/sailfishos-meeting"
                         font.pixelSize: Theme.fontSizeSmall
                         color: highlighted ? Theme.highlightColor : Theme.primaryColor
                     }
@@ -158,7 +160,7 @@ Page {
                     }
                 }
 
-                onClicked: Qt.openUrlExternally("https://github.com/nicosouv/mer-meeting")
+                onClicked: Qt.openUrlExternally("https://github.com/nicosouv/sailfishos-meeting")
             }
 
             Item { width: 1; height: Theme.paddingLarge }

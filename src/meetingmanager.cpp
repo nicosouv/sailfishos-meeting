@@ -431,25 +431,38 @@ void MeetingManager::onNextMeetingContentReplyFinished()
 QString MeetingManager::parseNextMeetingFromLog(const QString &html)
 {
     // Look for pattern: "#info Next meeting will be held on ... 2025-11-20T1600Z"
+    // Also try with different formats
     QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4}Z)");
     QRegularExpressionMatch match = re.match(html);
 
     if (!match.hasMatch()) {
+        qDebug() << "No next meeting date found in log";
         return QString();
     }
 
     QString dateStr = match.captured(1);
+    qDebug() << "Found next meeting date string:" << dateStr;
 
     // Parse the date format: 2025-11-20T1600Z
     QDateTime meetingDateTime = QDateTime::fromString(dateStr, "yyyy-MM-ddTHHmmZ");
     meetingDateTime.setTimeSpec(Qt::UTC);
 
+    if (!meetingDateTime.isValid()) {
+        qDebug() << "Failed to parse date:" << dateStr;
+        return QString();
+    }
+
     // Check if the date is in the future
     QDateTime now = QDateTime::currentDateTimeUtc();
+    qDebug() << "Meeting datetime:" << meetingDateTime << "Now:" << now;
 
     if (meetingDateTime > now) {
         // Format for display
-        return meetingDateTime.toString("dddd d MMMM yyyy - HH:mm") + " UTC";
+        QString formatted = meetingDateTime.toString("dddd d MMMM yyyy - HH:mm") + " UTC";
+        qDebug() << "Next meeting formatted:" << formatted;
+        return formatted;
+    } else {
+        qDebug() << "Meeting date is in the past";
     }
 
     return QString();
