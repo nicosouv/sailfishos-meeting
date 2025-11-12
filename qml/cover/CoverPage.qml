@@ -32,10 +32,85 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 CoverBackground {
-    Label {
-        id: label
+    property string nextMeetingDate: meetingManager.getNextMeetingDate()
+
+    Connections {
+        target: meetingManager
+        onNextMeetingDateChanged: {
+            nextMeetingDate = date
+        }
+    }
+
+    Column {
         anchors.centerIn: parent
-        text: qsTr("SailfishOS Meetings")
+        width: parent.width - 2 * Theme.paddingLarge
+        spacing: Theme.paddingMedium
+
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("SFOS Meetings")
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.secondaryColor
+        }
+
+        Column {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: Theme.paddingSmall
+            visible: nextMeetingDate !== ""
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Next Meeting")
+                font.pixelSize: Theme.fontSizeExtraSmall
+                font.bold: true
+                color: Theme.highlightColor
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: {
+                    if (nextMeetingDate === "") return ""
+                    // Parse format: "Thursday 20 November 2025 - 16:00 UTC"
+                    var parts = nextMeetingDate.split(" - ")
+                    if (parts.length === 2) {
+                        var dateParts = parts[0].split(" ")
+                        // Return: "20 Nov 2025"
+                        if (dateParts.length >= 3) {
+                            return dateParts[1] + " " + dateParts[2].substring(0, 3) + " " + dateParts[3]
+                        }
+                    }
+                    return nextMeetingDate
+                }
+                font.pixelSize: Theme.fontSizeMedium
+                font.bold: true
+                color: Theme.primaryColor
+                wrapMode: Text.Wrap
+                horizontalAlignment: Text.AlignHCenter
+                width: parent.parent.width
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: {
+                    if (nextMeetingDate === "") return ""
+                    var parts = nextMeetingDate.split(" - ")
+                    if (parts.length === 2) {
+                        return parts[1] // "16:00 UTC"
+                    }
+                    return ""
+                }
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.secondaryColor
+            }
+        }
+
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: nextMeetingDate === ""
+            text: qsTr("No upcoming meeting")
+            font.pixelSize: Theme.fontSizeSmall
+            color: Theme.secondaryColor
+        }
     }
 }
 
