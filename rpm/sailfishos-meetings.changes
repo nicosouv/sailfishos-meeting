@@ -8,19 +8,26 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
-* Mon Nov 11 2025 Poulpe <poulpe@example.com> 1.3.1-1
+* Tue Nov 12 2024 Poulpe <poulpe@example.com> 1.4.0-1
+- Rename project to SailfishOS Meetings
+- Add read tracking system with persistent storage
+- Display read meetings in gray with reduced opacity
+- Refactor message display to Slack-style layout
+- Add UserAvatar component with colored badges and user initials
+
+* Mon Nov 11 2024 Poulpe <poulpe@example.com> 1.3.1-1
 - Add About page with app information and credits
 - Made with love for Sailfish OS community
 - Include GitHub link and feature list
 
-* Mon Nov 11 2025 Poulpe <poulpe@example.com> 1.3.0-1
+* Mon Nov 11 2024 Poulpe <poulpe@example.com> 1.3.0-1
 - Add monthly grouping in meeting list with SectionHeaders
 - Update meeting title format to include date
 - Add favorites filter toggle to show only favorite meetings
 - Add year statistics in header (total meetings and favorites count)
 - Add ViewPlaceholder for empty meeting lists
 
-* Mon Nov 11 2025 Poulpe <poulpe@example.com> 1.2.0-1
+* Mon Nov 11 2024 Poulpe <poulpe@example.com> 1.2.0-1
 - Add meeting statistics (message count, participants, duration, top contributor)
 - Add topic navigation for quick jumping to #topic entries
 - Add favorites system with persistent storage
