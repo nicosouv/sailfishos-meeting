@@ -1,5 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import org.nemomobile.calendar 1.0
+import Nemo.Notifications 1.0
 
 Page {
     id: page
@@ -7,6 +9,7 @@ Page {
     allowedOrientations: Orientation.All
 
     property string nextMeetingDate: meetingManager.getNextMeetingDate()
+    property string nextMeetingDateRaw: ""
 
     Component.onCompleted: {
         meetingManager.fetchNextMeetingDate()
@@ -16,7 +19,40 @@ Page {
         target: meetingManager
         onNextMeetingDateChanged: {
             nextMeetingDate = date
+            nextMeetingDateRaw = rawDate
         }
+    }
+
+    function addToCalendar() {
+        if (nextMeetingDateRaw === "") {
+            return
+        }
+
+        var event = Calendar.createNewEvent()
+        event.displayLabel = "Sailfish OS Community Meeting"
+        event.description = "Monthly community meeting to discuss Sailfish OS development and topics"
+        event.location = "IRC: #sailfishos-meeting on libera.chat"
+
+        // Parse the ISO date format: 2025-11-20T1600Z
+        var dateTime = new Date(nextMeetingDateRaw)
+        event.startTime = dateTime
+
+        // Meeting usually lasts 1 hour
+        var endTime = new Date(dateTime.getTime() + 60 * 60 * 1000)
+        event.endTime = endTime
+
+        event.calendarUid = Calendar.defaultNotebook
+        event.save()
+
+        // Show confirmation
+        calendarNotification.publish()
+    }
+
+    Notification {
+        id: calendarNotification
+        appName: "SFOS Meetings"
+        summary: qsTr("Added to calendar")
+        body: qsTr("The next meeting has been added to your calendar")
     }
 
     SilicaListView {
@@ -55,11 +91,23 @@ Page {
                         width: parent.width - 2 * Theme.horizontalPageMargin
                         spacing: Theme.paddingSmall
 
-                        Label {
-                            text: qsTr("Next Meeting")
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.bold: true
-                            color: Theme.highlightColor
+                        Row {
+                            width: parent.width
+                            spacing: Theme.paddingMedium
+
+                            Label {
+                                text: qsTr("Next Meeting")
+                                font.pixelSize: Theme.fontSizeSmall
+                                font.bold: true
+                                color: Theme.highlightColor
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Button {
+                                text: qsTr("Add to Calendar")
+                                preferredWidth: Theme.buttonWidthSmall
+                                onClicked: addToCalendar()
+                            }
                         }
 
                         Label {

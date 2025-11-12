@@ -42,7 +42,7 @@ signals:
     void htmlContentLoaded(QString content);
     void favoritesChanged();
     void readStatusChanged();
-    void nextMeetingDateChanged(QString date);
+    void nextMeetingDateChanged(QString date, QString rawDate);
 
 private slots:
     void onMeetingListReplyFinished();

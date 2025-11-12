@@ -417,8 +417,14 @@ void MeetingManager::onNextMeetingContentReplyFinished()
     QString nextMeetingDate = parseNextMeetingFromLog(content);
 
     if (!nextMeetingDate.isEmpty()) {
+        // Also extract the raw ISO date
+        QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4}Z)");
+        QRegularExpressionMatch match = re.match(content);
+        QString rawDate = match.hasMatch() ? match.captured(1) : "";
+
         m_settings->setValue("nextMeetingDate", nextMeetingDate);
-        emit nextMeetingDateChanged(nextMeetingDate);
+        m_settings->setValue("nextMeetingDateRaw", rawDate);
+        emit nextMeetingDateChanged(nextMeetingDate, rawDate);
     }
 }
 
