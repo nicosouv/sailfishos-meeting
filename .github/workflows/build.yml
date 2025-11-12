@@ -40,7 +40,7 @@ jobs:
 
       - name: Update version in spec file
         run: |
-          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/mer-meeting.spec
+          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/sailfishos-meetings.spec
 
       - name: Build RPM for Sailfish OS
         id: build
@@ -98,7 +98,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Mer Meeting v${{ steps.version.outputs.version }}
+          name: SailfishOS Meetings v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
           files: packages/*.rpm
