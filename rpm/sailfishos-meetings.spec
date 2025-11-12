@@ -1,10 +1,10 @@
-Name:       mer-meeting
+Name:       sailfishos-meetings
 Summary:    Sailfish OS Meeting Logs Viewer
 Version:    1.3.1
 Release:    1
 Group:      Applications/Internet
 License:    BSD-3-Clause
-URL:        https://github.com/PoulpePoulpePoulpe/mer-meeting
+URL:        https://github.com/nicosouv/sailfishos-meeting
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   sailfishsilica-qt5 >= 0.10.9
 BuildRequires:  pkgconfig(sailfishapp) >= 1.0.2
@@ -23,7 +23,7 @@ in a native Sailfish OS interface.
 %setup -q -n %{name}-%{version}
 
 %build
-%qmake5 mer-meeting.pro
+%qmake5 sailfishos-meetings.pro
 
 make %{?_smp_mflags}
 
