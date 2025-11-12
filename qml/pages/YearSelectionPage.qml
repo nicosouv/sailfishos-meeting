@@ -30,16 +30,25 @@ Page {
 
     function addToCalendar() {
         if (nextMeetingDateRaw === "") {
+            console.log("No raw date available")
             return
         }
+
+        console.log("Adding to calendar with date:", nextMeetingDateRaw)
 
         var event = Calendar.createNewEvent()
         event.displayLabel = "Sailfish OS Community Meeting"
         event.description = "Monthly community meeting to discuss Sailfish OS development and topics"
         event.location = "IRC: #sailfishos-meeting on libera.chat"
 
-        // Parse the ISO date format: 2025-11-20T1600Z
-        var dateTime = new Date(nextMeetingDateRaw)
+        // Parse the ISO date format: 2024-11-28T0800Z
+        // Need to insert colon in time: 2024-11-28T08:00Z
+        var formattedDate = nextMeetingDateRaw.replace(/T(\d{2})(\d{2})Z/, "T$1:$2Z")
+        console.log("Formatted date for parsing:", formattedDate)
+
+        var dateTime = new Date(formattedDate)
+        console.log("Parsed datetime:", dateTime)
+
         event.startTime = dateTime
 
         // Meeting usually lasts 1 hour

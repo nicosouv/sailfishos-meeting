@@ -417,10 +417,10 @@ void MeetingManager::onNextMeetingContentReplyFinished()
     QString nextMeetingDate = parseNextMeetingFromLog(content);
 
     if (!nextMeetingDate.isEmpty()) {
-        // Also extract the raw ISO date
-        QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4}Z)");
+        // Also extract the raw ISO date (without Z)
+        QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4})Z");
         QRegularExpressionMatch match = re.match(content);
-        QString rawDate = match.hasMatch() ? match.captured(1) : "";
+        QString rawDate = match.hasMatch() ? match.captured(1) + "Z" : "";
 
         m_settings->setValue("nextMeetingDate", nextMeetingDate);
         m_settings->setValue("nextMeetingDateRaw", rawDate);
@@ -430,9 +430,9 @@ void MeetingManager::onNextMeetingContentReplyFinished()
 
 QString MeetingManager::parseNextMeetingFromLog(const QString &html)
 {
-    // Look for pattern: "#info Next meeting will be held on ... 2025-11-20T1600Z"
-    // Also try with different formats
-    QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4}Z)");
+    // Look for pattern: "#info Next meeting will be held on ... 2024-11-28T0800Z"
+    // Format is: YYYY-MM-DDTHHMM Z (no colon in time)
+    QRegularExpression re("#info\\s+Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4})Z");
     QRegularExpressionMatch match = re.match(html);
 
     if (!match.hasMatch()) {
@@ -443,8 +443,9 @@ QString MeetingManager::parseNextMeetingFromLog(const QString &html)
     QString dateStr = match.captured(1);
     qDebug() << "Found next meeting date string:" << dateStr;
 
-    // Parse the date format: 2025-11-20T1600Z
-    QDateTime meetingDateTime = QDateTime::fromString(dateStr, "yyyy-MM-ddTHHmmZ");
+    // Parse the date format: 2024-11-28T0800 (without Z)
+    // Format is yyyy-MM-ddTHHmm
+    QDateTime meetingDateTime = QDateTime::fromString(dateStr, "yyyy-MM-ddTHHmm");
     meetingDateTime.setTimeSpec(Qt::UTC);
 
     if (!meetingDateTime.isValid()) {
@@ -454,15 +455,15 @@ QString MeetingManager::parseNextMeetingFromLog(const QString &html)
 
     // Check if the date is in the future
     QDateTime now = QDateTime::currentDateTimeUtc();
-    qDebug() << "Meeting datetime:" << meetingDateTime << "Now:" << now;
+    qDebug() << "Meeting datetime:" << meetingDateTime.toString(Qt::ISODate) << "Now:" << now.toString(Qt::ISODate);
 
     if (meetingDateTime > now) {
         // Format for display
-        QString formatted = meetingDateTime.toString("dddd d MMMM yyyy - HH:mm") + " UTC";
+        QString formatted = meetingDateTime.toString("dddd d MMMM yyyy") + " - " + meetingDateTime.toString("HH:mm") + " UTC";
         qDebug() << "Next meeting formatted:" << formatted;
         return formatted;
     } else {
-        qDebug() << "Meeting date is in the past";
+        qDebug() << "Meeting date is in the past:" << meetingDateTime.toString(Qt::ISODate);
     }
 
     return QString();
