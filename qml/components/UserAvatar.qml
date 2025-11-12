@@ -7,8 +7,8 @@ Item {
     property string username: ""
     property color userColor: calculateColor(username)
 
-    width: Theme.iconSizeSmall
-    height: Theme.iconSizeSmall
+    width: Theme.iconSizeSmall + Theme.paddingSmall
+    height: Theme.iconSizeSmall + Theme.paddingSmall
 
     function calculateColor(name) {
         if (name === "") return Theme.secondaryColor
@@ -34,7 +34,7 @@ Item {
         Label {
             anchors.centerIn: parent
             text: username.length > 0 ? username.charAt(0).toUpperCase() : ""
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSizeMedium
             font.bold: true
             color: "white"
         }
