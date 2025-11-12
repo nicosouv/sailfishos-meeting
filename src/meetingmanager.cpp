@@ -7,6 +7,10 @@
 #include <QDateTime>
 #include <QMap>
 #include <QTime>
+#include <QFile>
+#include <QTextStream>
+#include <QDesktopServices>
+#include <QUrl>
 #include <algorithm>
 
 MeetingManager::MeetingManager(QObject *parent)
@@ -533,4 +537,27 @@ QString MeetingManager::parseNextMeetingFromLog(const QString &html)
 QString MeetingManager::getNextMeetingDate() const
 {
     return m_settings->value("nextMeetingDate").toString();
+}
+
+void MeetingManager::saveIcsFile(const QString &path, const QString &content)
+{
+    qDebug() << "Saving ICS file to:" << path;
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "Failed to create ICS file:" << file.errorString();
+        return;
+    }
+
+    QTextStream out(&file);
+    out << content;
+    file.close();
+
+    qDebug() << "ICS file saved, opening with system handler";
+
+    // Open the ICS file with the default calendar app
+    QUrl fileUrl = QUrl::fromLocalFile(path);
+    if (!QDesktopServices::openUrl(fileUrl)) {
+        qDebug() << "Failed to open ICS file";
+    }
 }

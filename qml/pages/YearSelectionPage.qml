@@ -66,15 +66,27 @@ Page {
         var description = encodeURIComponent("Monthly community meeting to discuss Sailfish OS development and topics")
         var location = encodeURIComponent("IRC: #sailfishos-meeting on libera.chat")
 
-        // Use the jolla-calendar command to open calendar
-        var calendarUrl = "jolla-calendar://event?startTime=" + startTimeFormatted +
-                         "&endTime=" + endTimeFormatted +
-                         "&title=" + title +
-                         "&description=" + description +
-                         "&location=" + location
+        // Create an ICS file content
+        var icsContent = "BEGIN:VCALENDAR\n" +
+                        "VERSION:2.0\n" +
+                        "PRODID:-//SFOS Meetings//EN\n" +
+                        "BEGIN:VEVENT\n" +
+                        "UID:" + Date.now() + "@sailfishos-meetings\n" +
+                        "DTSTAMP:" + startTimeFormatted + "\n" +
+                        "DTSTART:" + startTimeFormatted + "\n" +
+                        "DTEND:" + endTimeFormatted + "\n" +
+                        "SUMMARY:Sailfish OS Community Meeting\n" +
+                        "DESCRIPTION:Monthly community meeting to discuss Sailfish OS development and topics\n" +
+                        "LOCATION:IRC: #sailfishos-meeting on libera.chat\n" +
+                        "END:VEVENT\n" +
+                        "END:VCALENDAR"
 
-        console.log("Opening calendar with URL:", calendarUrl)
-        Qt.openUrlExternally(calendarUrl)
+        // Save to temp file and open with calendar
+        var tempPath = "/tmp/sfos-meeting.ics"
+        console.log("Creating ICS file at:", tempPath)
+
+        // Use Qt.openUrlExternally with file:// to open the ICS file
+        meetingManager.saveIcsFile(tempPath, icsContent)
     }
 
     SilicaListView {

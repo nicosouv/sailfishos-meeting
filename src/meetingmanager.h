@@ -34,6 +34,7 @@ public:
     Q_INVOKABLE void markAsRead(const QString &meetingId);
     Q_INVOKABLE void fetchNextMeetingDate();
     Q_INVOKABLE QString getNextMeetingDate() const;
+    Q_INVOKABLE void saveIcsFile(const QString &path, const QString &content);
 
 signals:
     void meetingsLoaded(QVariantList meetings);
