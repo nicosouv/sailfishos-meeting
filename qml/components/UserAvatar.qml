@@ -1,30 +1,15 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import "../components"
 
 Item {
     id: root
 
     property string username: ""
-    property color userColor: calculateColor(username)
+    property color userColor: UserColorManager.getColorForUser(username)
 
     width: Theme.iconSizeSmall + Theme.paddingSmall
     height: Theme.iconSizeSmall + Theme.paddingSmall
-
-    function calculateColor(name) {
-        if (name === "") return Theme.secondaryColor
-
-        // Hash the username to generate a color
-        var hash = 0
-        for (var i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash)
-        }
-
-        // Convert to HSL color with fixed saturation and lightness for consistent appearance
-        var hue = Math.abs(hash % 360)
-
-        // Use HSL to RGB conversion for better color distribution
-        return Qt.hsla(hue / 360, 0.6, 0.5, 1.0)
-    }
 
     Rectangle {
         anchors.fill: parent

@@ -37,6 +37,9 @@ OTHER_FILES += qml/sailfishos-meetings.qml \
     qml/pages/MeetingSummaryPage.qml \
     qml/pages/MeetingLogPage.qml \
     qml/pages/AboutPage.qml \
+    qml/components/UserAvatar.qml \
+    qml/components/UserColorManager.qml \
+    qml/components/qmldir \
     rpm/sailfishos-meetings.spec \
     rpm/sailfishos-meetings.yaml \
     translations/*.ts \

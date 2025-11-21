@@ -211,80 +211,170 @@ Page {
 
             delegate: Item {
                 width: listView.width
-                height: Math.max(contentColumn.height + Theme.paddingMedium * 2, Theme.itemSizeSmall)
 
-                Rectangle {
-                    anchors.fill: parent
-                    color: modelData.isTopic ? Theme.rgba(Theme.highlightBackgroundColor, 0.1) :
-                           modelData.isCommand ? Theme.rgba(Theme.secondaryHighlightColor, 0.05) :
-                           "transparent"
+                property bool showHeader: {
+                    if (index === 0) return true
+                    if (modelData.username === "") return true
+                    if (modelData.isTopic) return true
+
+                    var prevMsg = filteredMessages[index - 1]
+                    return prevMsg.username !== modelData.username
                 }
 
-                Row {
-                    id: messageRow
-                    width: parent.width - Theme.horizontalPageMargin * 2
-                    x: Theme.horizontalPageMargin
-                    y: Theme.paddingMedium
-                    spacing: Theme.paddingMedium
+                property int leftMargin: Theme.horizontalPageMargin
+                property int avatarWidth: Theme.iconSizeSmall + Theme.paddingSmall
+                property int textLeftPosition: leftMargin + avatarWidth + Theme.paddingMedium
 
-                    // Avatar
-                    UserAvatar {
-                        id: avatar
-                        username: modelData.username
-                        visible: modelData.username !== ""
-                        anchors.top: parent.top
+                height: modelData.isCommand ? infoHeader.height :
+                        messageContent.y + messageContent.height + Theme.paddingMedium
+
+                // Command/Header style
+                Item {
+                    id: infoHeader
+                    visible: modelData.isCommand
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
                     }
+                    height: infoContent.height + Theme.paddingMedium * 2
 
-                    Column {
-                        id: contentColumn
-                        width: parent.width - (avatar.visible ? avatar.width + Theme.paddingMedium : 0)
-                        spacing: Theme.paddingSmall
+                    Row {
+                        id: infoContent
+                        x: Theme.horizontalPageMargin
+                        y: Theme.paddingMedium
+                        width: parent.width - Theme.horizontalPageMargin * 2
+                        spacing: Theme.paddingMedium
 
-                        // Username and timestamp row
-                        Row {
-                            width: parent.width
-                            spacing: Theme.paddingMedium
-                            visible: modelData.username !== ""
-
-                            Label {
-                                text: modelData.username
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.bold: true
-                                color: avatar.userColor
+                        // Icône selon le type
+                        Image {
+                            id: commandIcon
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            source: {
+                                var msg = modelData.message.toLowerCase()
+                                if (msg.startsWith("#topic")) return "image://theme/icon-m-events"
+                                if (msg.startsWith("#info")) return "image://theme/icon-m-about"
+                                if (msg.startsWith("#link")) return "image://theme/icon-m-link"
+                                if (msg.startsWith("#action")) return "image://theme/icon-m-add"
+                                if (msg.startsWith("#agreed")) return "image://theme/icon-m-accept"
+                                return "image://theme/icon-m-note"
                             }
-
-                            Label {
-                                text: modelData.timestamp
-                                font.pixelSize: Theme.fontSizeExtraSmall
-                                color: Theme.secondaryColor
-                                anchors.baseline: parent.children[0].baseline
-                            }
+                            anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        // Message
                         Label {
-                            width: parent.width
+                            width: parent.width - commandIcon.width - Theme.paddingMedium
+                            text: modelData.message
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.bold: true
+                            color: Theme.primaryColor
+                            wrapMode: Text.Wrap
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    // Ligne de séparation en bas
+                    Rectangle {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        height: 1
+                        color: Theme.secondaryColor
+                        opacity: 0.2
+                    }
+                }
+
+                // Background pour messages normaux
+                Rectangle {
+                    anchors.fill: parent
+                    visible: !modelData.isCommand
+                    color: modelData.isTopic ? Theme.rgba(Theme.highlightBackgroundColor, 0.1) : "transparent"
+                }
+
+                // Avatar (toujours à la même position)
+                UserAvatar {
+                    id: avatar
+                    x: leftMargin
+                    y: Theme.paddingMedium
+                    username: modelData.username
+                    visible: !modelData.isCommand && modelData.username !== "" && showHeader
+                }
+
+                // Contenu du message (toujours à la même position X)
+                Column {
+                    id: messageContent
+                    visible: !modelData.isCommand
+                    x: textLeftPosition
+                    y: Theme.paddingMedium
+                    width: parent.width - textLeftPosition - Theme.horizontalPageMargin
+                    spacing: 0
+
+                    // Username et timestamp (seulement si showHeader)
+                    Row {
+                        width: parent.width
+                        spacing: Theme.paddingMedium
+                        visible: modelData.username !== "" && showHeader
+
+                        Label {
+                            text: modelData.username
+                            font.pixelSize: Theme.fontSizeSmall
+                            font.bold: true
+                            color: avatar.userColor
+                        }
+
+                        Label {
+                            text: modelData.timestamp
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                            anchors.baseline: parent.children[0].baseline
+                        }
+                    }
+
+                    // Spacer entre username et message
+                    Item {
+                        width: 1
+                        height: (modelData.username !== "" && showHeader) ? Theme.paddingSmall : 0
+                    }
+
+                    // Message avec timestamp groupé
+                    Row {
+                        width: parent.width
+                        spacing: Theme.paddingMedium
+                        visible: modelData.username !== ""
+
+                        Label {
+                            width: parent.width - (groupedTimestamp.visible ? groupedTimestamp.width + Theme.paddingMedium : 0)
                             text: modelData.message
                             font.pixelSize: Theme.fontSizeSmall
                             font.italic: modelData.isAction
-                            font.bold: modelData.isCommand
-                            color: modelData.isTopic ? Theme.highlightColor :
-                                   modelData.isCommand ? Theme.secondaryHighlightColor :
-                                   Theme.primaryColor
+                            color: modelData.isTopic ? Theme.highlightColor : Theme.primaryColor
                             wrapMode: Text.Wrap
                             textFormat: Text.PlainText
                         }
 
-                        // System message style (no username)
                         Label {
-                            visible: modelData.username === ""
-                            width: parent.width
-                            text: modelData.timestamp + " - " + modelData.message
-                            font.pixelSize: Theme.fontSizeExtraSmall
+                            id: groupedTimestamp
+                            visible: !showHeader
+                            text: modelData.timestamp
+                            font.pixelSize: Theme.fontSizeTiny
                             color: Theme.secondaryColor
-                            wrapMode: Text.Wrap
-                            font.italic: true
+                            opacity: 0.6
+                            anchors.baseline: parent.children[0].baseline
                         }
+                    }
+
+                    // Messages système (sans username)
+                    Label {
+                        visible: modelData.username === ""
+                        width: parent.width
+                        text: modelData.timestamp + " - " + modelData.message
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                        color: Theme.secondaryColor
+                        wrapMode: Text.Wrap
+                        font.italic: true
                     }
                 }
             }
