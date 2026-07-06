@@ -33,4 +33,4 @@
 
 ## Phase 4 — CI / packaging
 
-- [ ] Pin GitHub Actions to commit SHAs (`sailfish-build-rpm`, `action-gh-release`)
+- [x] Pin GitHub Actions to commit SHAs (`sailfish-build-rpm`, `action-gh-release`)
