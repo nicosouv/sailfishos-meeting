@@ -11,6 +11,7 @@ class IrcMessage : public QObject
     Q_PROPERTY(QString timestamp READ timestamp CONSTANT)
     Q_PROPERTY(QString username READ username CONSTANT)
     Q_PROPERTY(QString message READ message CONSTANT)
+    Q_PROPERTY(QString richMessage READ richMessage CONSTANT)
     Q_PROPERTY(QString userColor READ userColor CONSTANT)
     Q_PROPERTY(bool isAction READ isAction CONSTANT)
     Q_PROPERTY(bool isTopic READ isTopic CONSTANT)
@@ -23,6 +24,7 @@ public:
     QString timestamp() const { return m_timestamp; }
     QString username() const { return m_username; }
     QString message() const { return m_message; }
+    QString richMessage() const { return m_richMessage; }
     QString userColor() const { return m_userColor; }
     bool isAction() const { return m_isAction; }
     bool isTopic() const { return m_isTopic; }
@@ -34,12 +36,14 @@ private:
     QString m_timestamp;
     QString m_username;
     QString m_message;
+    QString m_richMessage;
     QString m_userColor;
     bool m_isAction;
     bool m_isTopic;
     bool m_isCommand;
 
     void parseMessageType();
+    static QString buildRichMessage(const QString &message);
 };
 
 #endif // IRCMESSAGE_H

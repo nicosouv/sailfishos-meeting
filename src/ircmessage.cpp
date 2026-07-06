@@ -1,5 +1,6 @@
 #include "ircmessage.h"
 #include <QCryptographicHash>
+#include <QRegularExpression>
 
 IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
                        const QString &message, QObject *parent)
@@ -12,7 +13,18 @@ IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
     , m_isCommand(false)
 {
     m_userColor = generateColorForUsername(username);
+    m_richMessage = buildRichMessage(message);
     parseMessageType();
+}
+
+QString IrcMessage::buildRichMessage(const QString &message)
+{
+    // Escape markup so IRC content cannot inject tags into StyledText labels,
+    // then turn plain URLs into clickable links
+    QString escaped = message.toHtmlEscaped();
+    QRegularExpression urlRe("((?:https?|ftp)://[^\\s<]+)");
+    escaped.replace(urlRe, "<a href=\"\\1\">\\1</a>");
+    return escaped;
 }
 
 void IrcMessage::parseMessageType()

@@ -11,6 +11,9 @@
 #include <QTextStream>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QQmlEngine>
+#include <QStandardPaths>
+#include <QDir>
 #include <algorithm>
 
 MeetingManager::MeetingManager(QObject *parent)
@@ -82,6 +85,8 @@ void MeetingManager::onMeetingListReplyFinished()
 
     QVariantList meetingVariants;
     for (Meeting *meeting : meetings) {
+        // Let the QML engine delete meetings once no page references them
+        QQmlEngine::setObjectOwnership(meeting, QQmlEngine::JavaScriptOwnership);
         meetingVariants.append(QVariant::fromValue(meeting));
     }
 
@@ -102,7 +107,7 @@ QList<Meeting*> MeetingManager::parseMeetingList(const QString &html)
 
         // Avoid duplicates (.log.html versions)
         if (!filename.contains(".log.html")) {
-            Meeting *meeting = new Meeting(filename, this);
+            Meeting *meeting = new Meeting(filename);
             meetings.append(meeting);
         }
     }
@@ -116,13 +121,14 @@ QList<Meeting*> MeetingManager::parseMeetingList(const QString &html)
     return meetings;
 }
 
-QString MeetingManager::fetchHtmlContent(const QString &url)
+void MeetingManager::fetchHtmlContent(const QString &url)
 {
+    setLoading(true);
+    setError("");
+
     QNetworkRequest request(url);
     QNetworkReply *reply = m_networkManager->get(request);
     connect(reply, &QNetworkReply::finished, this, &MeetingManager::onHtmlContentReplyFinished);
-
-    return QString(); // Will emit signal when loaded
 }
 
 void MeetingManager::onHtmlContentReplyFinished()
@@ -130,16 +136,19 @@ void MeetingManager::onHtmlContentReplyFinished()
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     if (!reply) return;
 
+    setLoading(false);
+
     if (reply->error() != QNetworkReply::NoError) {
         setError(reply->errorString());
         reply->deleteLater();
         return;
     }
 
+    QString url = reply->request().url().toString();
     QString content = QString::fromUtf8(reply->readAll());
     reply->deleteLater();
 
-    emit htmlContentLoaded(content);
+    emit htmlContentLoaded(url, content);
 }
 
 QVariantList MeetingManager::parseTopicsFromHtml(const QString &html)
@@ -161,7 +170,8 @@ QVariantList MeetingManager::parseTopicsFromHtml(const QString &html)
         topicTitle.replace("&amp;", "&");
 
         QStringList items;
-        MeetingTopic *topic = new MeetingTopic(topicTitle, items, this);
+        MeetingTopic *topic = new MeetingTopic(topicTitle, items);
+        QQmlEngine::setObjectOwnership(topic, QQmlEngine::JavaScriptOwnership);
         topics.append(QVariant::fromValue(topic));
     }
 
@@ -185,6 +195,9 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
     // Split into lines
     QStringList lines = preContent.split('\n', QString::SkipEmptyParts);
 
+    QRegularExpression tagRe("<[^>]*>");
+    QRegularExpression lineRe("^(\\d{2}:\\d{2}:\\d{2})\\s+(.+)$");
+
     for (const QString &line : lines) {
         // Parse IRC message format: HH:MM:SS <username> message
         // or: HH:MM:SS * username action
@@ -192,7 +205,7 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
 
         QString cleanLine = line;
         // Remove HTML tags
-        cleanLine.replace(QRegularExpression("<[^>]*>"), "");
+        cleanLine.replace(tagRe, "");
         // Decode HTML entities
         cleanLine.replace("&lt;", "<");
         cleanLine.replace("&gt;", ">");
@@ -200,7 +213,6 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
         cleanLine.replace("&nbsp;", " ");
 
         // Match timestamp and rest
-        QRegularExpression lineRe("^(\\d{2}:\\d{2}:\\d{2})\\s+(.+)$");
         QRegularExpressionMatch lineMatch = lineRe.match(cleanLine);
 
         if (!lineMatch.hasMatch()) {
@@ -235,7 +247,8 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
             message = rest;
         }
 
-        IrcMessage *msg = new IrcMessage(timestamp, username, message, this);
+        IrcMessage *msg = new IrcMessage(timestamp, username, message);
+        QQmlEngine::setObjectOwnership(msg, QQmlEngine::JavaScriptOwnership);
         messages.append(QVariant::fromValue(msg));
     }
 
@@ -244,7 +257,8 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
 
 MeetingStatistics* MeetingManager::calculateStatistics(const QVariantList &messages)
 {
-    MeetingStatistics *stats = new MeetingStatistics(this);
+    MeetingStatistics *stats = new MeetingStatistics();
+    QQmlEngine::setObjectOwnership(stats, QQmlEngine::JavaScriptOwnership);
 
     if (messages.isEmpty()) {
         return stats;
@@ -370,10 +384,7 @@ void MeetingManager::markAsRead(const QString &meetingId)
 
 void MeetingManager::fetchNextMeetingDate()
 {
-    // Get current year and next year
-    QDateTime now = QDateTime::currentDateTime();
-    int currentYear = now.date().year();
-    int nextYear = currentYear + 1;
+    int currentYear = QDateTime::currentDateTime().date().year();
 
     // Try current year first
     QString url = QString("https://irclogs.sailfishos.org/meetings/sailfishos-meeting/%1/").arg(currentYear);
@@ -451,21 +462,22 @@ void MeetingManager::onNextMeetingContentReplyFinished()
     QString content = QString::fromUtf8(reply->readAll());
     reply->deleteLater();
 
-    QString nextMeetingDate = parseNextMeetingFromLog(content);
+    QString rawDate;
+    QString nextMeetingDate = parseNextMeetingFromLog(content, &rawDate);
 
     if (!nextMeetingDate.isEmpty()) {
-        // Also extract the raw ISO date (without Z)
-        QRegularExpression re("#info\\s*(?:</span>)?(?:<span[^>]*>)?\\s*Next meeting will be held on.*?(\\d{4}-\\d{2}-\\d{2}T\\d{4})Z");
-        QRegularExpressionMatch match = re.match(content);
-        QString rawDate = match.hasMatch() ? match.captured(1) + "Z" : "";
-
         m_settings->setValue("nextMeetingDate", nextMeetingDate);
         m_settings->setValue("nextMeetingDateRaw", rawDate);
         emit nextMeetingDateChanged(nextMeetingDate, rawDate);
+    } else if (!m_settings->value("nextMeetingDate").toString().isEmpty()) {
+        // No upcoming meeting announced: clear the stale stored date
+        m_settings->remove("nextMeetingDate");
+        m_settings->remove("nextMeetingDateRaw");
+        emit nextMeetingDateChanged(QString(), QString());
     }
 }
 
-QString MeetingManager::parseNextMeetingFromLog(const QString &html)
+QString MeetingManager::parseNextMeetingFromLog(const QString &html, QString *rawDate)
 {
     // Look for pattern: "#info Next meeting will be held on ... 2025-11-20T1600Z"
     // Format is: YYYY-MM-DDTHHMM Z (no colon in time)
@@ -492,6 +504,9 @@ QString MeetingManager::parseNextMeetingFromLog(const QString &html)
     QDateTime now = QDateTime::currentDateTimeUtc();
 
     if (meetingDateTime > now) {
+        if (rawDate) {
+            *rawDate = dateStr + "Z";
+        }
         // Format for display
         QString formatted = meetingDateTime.toString("dddd d MMMM yyyy") + " - " + meetingDateTime.toString("HH:mm") + " UTC";
         return formatted;
@@ -505,8 +520,13 @@ QString MeetingManager::getNextMeetingDate() const
     return m_settings->value("nextMeetingDate").toString();
 }
 
-void MeetingManager::saveIcsFile(const QString &path, const QString &content)
+void MeetingManager::saveIcsFile(const QString &content)
 {
+    // Write to the app cache dir rather than a predictable world-writable /tmp path
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    QDir().mkpath(dir);
+    QString path = dir + "/sfos-meeting.ics";
+
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         return;

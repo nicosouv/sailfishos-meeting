@@ -43,6 +43,7 @@ Page {
     Connections {
         target: meetingManager
         onHtmlContentLoaded: {
+            if (url !== meeting.logUrl) return
             logContent = content
             messages = meetingManager.parseIrcMessagesFromHtml(content)
             stats = meetingManager.calculateStatistics(messages)
@@ -275,7 +276,7 @@ Page {
                             id: sectionLabel
                             width: parent.width - sectionIcon.width - Theme.paddingMedium
                             y: Theme.paddingMedium
-                            text: modelData.message.replace(/((https?|ftp):\/\/[^\s]+)/g, '<a href="$1">$1</a>')
+                            text: modelData.richMessage
                             font.pixelSize: Theme.fontSizeMedium
                             font.bold: true
                             color: Theme.primaryColor
@@ -355,7 +356,7 @@ Page {
 
                         Label {
                             width: parent.width - (groupedTimestamp.visible ? groupedTimestamp.width + Theme.paddingMedium : 0)
-                            text: modelData.message.replace(/((https?|ftp):\/\/[^\s]+)/g, '<a href="$1">$1</a>')
+                            text: modelData.richMessage
                             font.pixelSize: Theme.fontSizeSmall
                             font.italic: modelData.isAction
                             color: modelData.isTopic ? Theme.highlightColor : Theme.primaryColor
@@ -380,7 +381,7 @@ Page {
                     Label {
                         visible: modelData.username === ""
                         width: parent.width
-                        text: (modelData.timestamp + " - " + modelData.message).replace(/((https?|ftp):\/\/[^\s]+)/g, '<a href="$1">$1</a>')
+                        text: modelData.timestamp + " - " + modelData.richMessage
                         font.pixelSize: Theme.fontSizeExtraSmall
                         color: Theme.secondaryColor
                         linkColor: Theme.highlightColor
@@ -431,6 +432,7 @@ Page {
                             width: parent.width - 2 * Theme.horizontalPageMargin
                             anchors.verticalCenter: parent.verticalCenter
                             text: modelData.message
+                            textFormat: Text.PlainText
                             font.pixelSize: Theme.fontSizeSmall
                             color: highlighted ? Theme.highlightColor : Theme.primaryColor
                             truncationMode: TruncationMode.Fade

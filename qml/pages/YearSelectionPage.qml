@@ -54,11 +54,6 @@ Page {
         var endMinutes = ("0" + endTime.getUTCMinutes()).slice(-2)
         var endTimeFormatted = endYear + endMonth + endDay + "T" + endHours + endMinutes + "00Z"
 
-        // Create webcal URL to open in calendar app
-        var title = encodeURIComponent("Sailfish OS Community Meeting")
-        var description = encodeURIComponent("Monthly community meeting to discuss Sailfish OS development and topics")
-        var location = encodeURIComponent("IRC: #sailfishos-meeting on libera.chat")
-
         // Create an ICS file content
         var icsContent = "BEGIN:VCALENDAR\n" +
                         "VERSION:2.0\n" +
@@ -74,11 +69,8 @@ Page {
                         "END:VEVENT\n" +
                         "END:VCALENDAR"
 
-        // Save to temp file and open with calendar
-        var tempPath = "/tmp/sfos-meeting.ics"
-
-        // Use Qt.openUrlExternally with file:// to open the ICS file
-        meetingManager.saveIcsFile(tempPath, icsContent)
+        // Save to the app cache dir and open with calendar
+        meetingManager.saveIcsFile(icsContent)
     }
 
     SilicaListView {

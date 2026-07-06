@@ -14,7 +14,7 @@ TARGET = sailfishos-meetings
 
 CONFIG += sailfishapp
 
-QT += network
+QT += network qml
 
 SOURCES += src/sailfishos-meetings.cpp \
     src/meetingmanager.cpp \

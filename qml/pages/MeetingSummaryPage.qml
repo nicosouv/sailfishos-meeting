@@ -18,6 +18,7 @@ Page {
     Connections {
         target: meetingManager
         onHtmlContentLoaded: {
+            if (url !== meeting.url) return
             htmlContent = content
             topics = meetingManager.parseTopicsFromHtml(content)
         }
@@ -91,6 +92,7 @@ Page {
 
                     SectionHeader {
                         text: modelData.title
+                        textFormat: Text.PlainText
                     }
 
                     Label {

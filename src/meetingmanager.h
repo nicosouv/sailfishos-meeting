@@ -22,7 +22,7 @@ public:
     QString error() const { return m_error; }
 
     Q_INVOKABLE void fetchMeetingsForYear(int year);
-    Q_INVOKABLE QString fetchHtmlContent(const QString &url);
+    Q_INVOKABLE void fetchHtmlContent(const QString &url);
     Q_INVOKABLE QVariantList getAvailableYears();
     Q_INVOKABLE QVariantList parseTopicsFromHtml(const QString &html);
     Q_INVOKABLE QVariantList parseIrcMessagesFromHtml(const QString &html);
@@ -34,13 +34,13 @@ public:
     Q_INVOKABLE void markAsRead(const QString &meetingId);
     Q_INVOKABLE void fetchNextMeetingDate();
     Q_INVOKABLE QString getNextMeetingDate() const;
-    Q_INVOKABLE void saveIcsFile(const QString &path, const QString &content);
+    Q_INVOKABLE void saveIcsFile(const QString &content);
 
 signals:
     void meetingsLoaded(QVariantList meetings);
     void loadingChanged();
     void errorChanged();
-    void htmlContentLoaded(QString content);
+    void htmlContentLoaded(QString url, QString content);
     void favoritesChanged();
     void readStatusChanged();
     void nextMeetingDateChanged(QString date, QString rawDate);
@@ -59,7 +59,7 @@ private:
     void setLoading(bool loading);
     void setError(const QString &error);
     QList<Meeting*> parseMeetingList(const QString &html);
-    QString parseNextMeetingFromLog(const QString &html);
+    QString parseNextMeetingFromLog(const QString &html, QString *rawDate = nullptr);
     void fetchLogForNextMeeting(Meeting *meeting);
 };
 
