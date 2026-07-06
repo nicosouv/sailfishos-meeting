@@ -11,6 +11,7 @@
 #include <QTextStream>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QNetworkDiskCache>
 #include <QQmlEngine>
 #include <QStandardPaths>
 #include <QDir>
@@ -22,6 +23,14 @@ MeetingManager::MeetingManager(QObject *parent)
     , m_settings(new QSettings(this))
     , m_loading(false)
 {
+    // Keep favorites/read status in memory; delegates query them in bindings
+    m_favorites = m_settings->value("favorites").toStringList();
+    m_readMeetings = m_settings->value("readMeetings").toStringList();
+
+    // Past meeting pages are immutable, cache them on disk
+    QNetworkDiskCache *diskCache = new QNetworkDiskCache(this);
+    diskCache->setCacheDirectory(QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/network");
+    m_networkManager->setCache(diskCache);
 }
 
 void MeetingManager::setLoading(bool loading)
@@ -342,42 +351,34 @@ MeetingStatistics* MeetingManager::calculateStatistics(const QVariantList &messa
 
 bool MeetingManager::isFavorite(const QString &meetingId) const
 {
-    QStringList favorites = m_settings->value("favorites").toStringList();
-    return favorites.contains(meetingId);
+    return m_favorites.contains(meetingId);
 }
 
 void MeetingManager::toggleFavorite(const QString &meetingId)
 {
-    QStringList favorites = m_settings->value("favorites").toStringList();
-
-    if (favorites.contains(meetingId)) {
-        favorites.removeAll(meetingId);
-    } else {
-        favorites.append(meetingId);
+    if (m_favorites.removeAll(meetingId) == 0) {
+        m_favorites.append(meetingId);
     }
 
-    m_settings->setValue("favorites", favorites);
+    m_settings->setValue("favorites", m_favorites);
     emit favoritesChanged();
 }
 
 QStringList MeetingManager::getFavorites() const
 {
-    return m_settings->value("favorites").toStringList();
+    return m_favorites;
 }
 
 bool MeetingManager::isRead(const QString &meetingId) const
 {
-    QStringList readMeetings = m_settings->value("readMeetings").toStringList();
-    return readMeetings.contains(meetingId);
+    return m_readMeetings.contains(meetingId);
 }
 
 void MeetingManager::markAsRead(const QString &meetingId)
 {
-    QStringList readMeetings = m_settings->value("readMeetings").toStringList();
-
-    if (!readMeetings.contains(meetingId)) {
-        readMeetings.append(meetingId);
-        m_settings->setValue("readMeetings", readMeetings);
+    if (!m_readMeetings.contains(meetingId)) {
+        m_readMeetings.append(meetingId);
+        m_settings->setValue("readMeetings", m_readMeetings);
         emit readStatusChanged();
     }
 }

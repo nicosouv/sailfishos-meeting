@@ -55,6 +55,8 @@ private:
     QSettings *m_settings;
     bool m_loading;
     QString m_error;
+    QStringList m_favorites;
+    QStringList m_readMeetings;
 
     void setLoading(bool loading);
     void setError(const QString &error);

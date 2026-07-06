@@ -12,9 +12,10 @@
 ## Phase 2 — Performance
 
 - [x] Hoist regex compilation out of per-line parsing loop
-- [ ] Cache favorites/read status in memory (avoid QSettings reads in every delegate binding)
-- [ ] Debounce message search; consider QAbstractListModel for large logs
-- [ ] Add QNetworkDiskCache (past logs are immutable)
+- [x] Cache favorites/read status in memory (avoid QSettings reads in every delegate binding)
+- [x] Debounce message search
+- [x] Add QNetworkDiskCache (conditional GETs, 304 served from cache)
+- [ ] QAbstractListModel for large logs (needs build environment to validate)
 
 ## Phase 3 — Features
 

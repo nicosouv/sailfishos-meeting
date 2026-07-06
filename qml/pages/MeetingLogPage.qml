@@ -70,6 +70,13 @@ Page {
         filterMessages()
     }
 
+    // Avoid rebuilding the whole list on every keystroke
+    Timer {
+        id: searchDebounce
+        interval: 300
+        onTriggered: searchText = searchField.text
+    }
+
     SilicaFlickable {
         anchors.fill: parent
 
@@ -132,7 +139,7 @@ Page {
                 visible: messages.length > 0
 
                 onTextChanged: {
-                    searchText = text
+                    searchDebounce.restart()
                 }
 
                 EnterKey.iconSource: "image://theme/icon-m-enter-close"
