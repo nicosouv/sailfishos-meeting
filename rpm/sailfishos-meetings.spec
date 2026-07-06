@@ -1,6 +1,6 @@
 Name:       sailfishos-meetings
 Summary:    Sailfish OS Meeting Logs Viewer
-Version:    1.3.1
+Version:    2.0.0
 Release:    1
 Group:      Applications/Internet
 License:    BSD-3-Clause
