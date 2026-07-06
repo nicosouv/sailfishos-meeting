@@ -19,17 +19,17 @@
 
 ## Phase 3 — Features
 
-- [ ] Offline mode: read cached meetings without network
-- [ ] Notification reminder before the next meeting
-- [ ] Global search across all meetings of a year
-- [ ] Actions page: aggregate `#action` / `#agreed` items across meetings
-- [ ] Filter by participant + participation stats
-- [ ] Share meeting link via Sailfish share menu
-- [ ] Support years before 2020 (merproject era) or auto-detect available years
-- [ ] French translation (only German is declared)
-- [ ] "My nick" setting to highlight own mentions in logs
-- [ ] Agenda link: surface the forum post announced via `#link`
-- [ ] Publish on SailfishOS:Chum (binary lacks `harbour-` prefix, Jolla Store excluded)
+- [x] Offline mode: cached content is served when the network is unavailable
+- [x] Meeting reminder via calendar alarm (VALARM 30 min before) in the ICS export
+- [x] Global search across all meetings of a year
+- [x] Actions page: aggregate `#action` / `#agreed` items across meetings
+- [x] Filter log messages by participant (tap avatar/username)
+- [x] Copy meeting link to clipboard
+- [x] Auto-detect available years from the server index
+- [x] French translation, refreshed German translation
+- [x] "My nick" setting to highlight own mentions in logs
+- [x] Agenda link: surface the forum thread found in the latest log
+- [ ] Publish on SailfishOS:Chum (external submission; binary lacks `harbour-` prefix, Jolla Store excluded)
 
 ## Phase 4 — CI / packaging
 

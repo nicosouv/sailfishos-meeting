@@ -16,6 +16,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <algorithm>
+#include <functional>
 
 MeetingManager::MeetingManager(QObject *parent)
     : QObject(parent)
@@ -49,6 +50,19 @@ void MeetingManager::setError(const QString &error)
     }
 }
 
+QString MeetingManager::myNick() const
+{
+    return m_settings->value("myNick").toString();
+}
+
+void MeetingManager::setMyNick(const QString &nick)
+{
+    if (myNick() != nick) {
+        m_settings->setValue("myNick", nick);
+        emit myNickChanged();
+    }
+}
+
 QVariantList MeetingManager::getAvailableYears()
 {
     QVariantList years;
@@ -60,6 +74,59 @@ QVariantList MeetingManager::getAvailableYears()
     }
 
     return years;
+}
+
+void MeetingManager::fetchAvailableYears()
+{
+    QNetworkRequest request(QUrl("https://irclogs.sailfishos.org/meetings/sailfishos-meeting/"));
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, &MeetingManager::onYearListReplyFinished);
+}
+
+void MeetingManager::onYearListReplyFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    if (reply->error() != QNetworkReply::NoError) {
+        reply->deleteLater();
+        return; // Keep the fallback year list
+    }
+
+    QString html = QString::fromUtf8(reply->readAll());
+    reply->deleteLater();
+
+    // Match year directory links: href="2024/"
+    QRegularExpression re("href=\"(\\d{4})/\"");
+    QRegularExpressionMatchIterator i = re.globalMatch(html);
+
+    QList<int> years;
+    while (i.hasNext()) {
+        int year = i.next().captured(1).toInt();
+        if (!years.contains(year)) {
+            years.append(year);
+        }
+    }
+
+    if (years.isEmpty()) {
+        return;
+    }
+
+    std::sort(years.begin(), years.end(), std::greater<int>());
+
+    QVariantList yearList;
+    for (int year : years) {
+        yearList.append(year);
+    }
+
+    emit yearsLoaded(yearList);
+}
+
+Meeting* MeetingManager::createMeeting(const QString &filename)
+{
+    Meeting *meeting = new Meeting(filename);
+    QQmlEngine::setObjectOwnership(meeting, QQmlEngine::JavaScriptOwnership);
+    return meeting;
 }
 
 void MeetingManager::fetchMeetingsForYear(int year)
@@ -74,18 +141,37 @@ void MeetingManager::fetchMeetingsForYear(int year)
     connect(reply, &QNetworkReply::finished, this, &MeetingManager::onMeetingListReplyFinished);
 }
 
+QNetworkReply* MeetingManager::retryFromCache(QNetworkReply *reply)
+{
+    // Fall back to the disk cache when the network is unavailable
+    QNetworkRequest request = reply->request();
+    if (request.attribute(QNetworkRequest::CacheLoadControlAttribute).toInt()
+            == QNetworkRequest::AlwaysCache) {
+        return nullptr; // Already a cache-only attempt
+    }
+    request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysCache);
+    return m_networkManager->get(request);
+}
+
 void MeetingManager::onMeetingListReplyFinished()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     if (!reply) return;
 
-    setLoading(false);
-
     if (reply->error() != QNetworkReply::NoError) {
+        QNetworkReply *cached = retryFromCache(reply);
+        if (cached) {
+            connect(cached, &QNetworkReply::finished, this, &MeetingManager::onMeetingListReplyFinished);
+            reply->deleteLater();
+            return;
+        }
+        setLoading(false);
         setError(reply->errorString());
         reply->deleteLater();
         return;
     }
+
+    setLoading(false);
 
     QString html = QString::fromUtf8(reply->readAll());
     reply->deleteLater();
@@ -145,13 +231,20 @@ void MeetingManager::onHtmlContentReplyFinished()
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     if (!reply) return;
 
-    setLoading(false);
-
     if (reply->error() != QNetworkReply::NoError) {
+        QNetworkReply *cached = retryFromCache(reply);
+        if (cached) {
+            connect(cached, &QNetworkReply::finished, this, &MeetingManager::onHtmlContentReplyFinished);
+            reply->deleteLater();
+            return;
+        }
+        setLoading(false);
         setError(reply->errorString());
         reply->deleteLater();
         return;
     }
+
+    setLoading(false);
 
     QString url = reply->request().url().toString();
     QString content = QString::fromUtf8(reply->readAll());
@@ -349,6 +442,156 @@ MeetingStatistics* MeetingManager::calculateStatistics(const QVariantList &messa
     return stats;
 }
 
+void MeetingManager::searchYear(int year, const QString &query)
+{
+    if (m_scanActive) {
+        return; // One scan at a time
+    }
+
+    m_scanActive = true;
+    m_scanQuery = query;
+    m_scanResults.clear();
+    qDeleteAll(m_scanMeetings);
+    m_scanMeetings.clear();
+    m_scanIndex = 0;
+    setError("");
+
+    QString url = QString("https://irclogs.sailfishos.org/meetings/sailfishos-meeting/%1/").arg(year);
+    QNetworkRequest request(url);
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, &MeetingManager::onScanListReplyFinished);
+}
+
+void MeetingManager::onScanListReplyFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    if (reply->error() != QNetworkReply::NoError) {
+        QNetworkReply *cached = retryFromCache(reply);
+        if (cached) {
+            connect(cached, &QNetworkReply::finished, this, &MeetingManager::onScanListReplyFinished);
+            reply->deleteLater();
+            return;
+        }
+        setError(reply->errorString());
+        reply->deleteLater();
+        m_scanActive = false;
+        emit yearScanResults(QVariantList());
+        return;
+    }
+
+    QString html = QString::fromUtf8(reply->readAll());
+    reply->deleteLater();
+
+    m_scanMeetings = parseMeetingList(html);
+    emit yearScanProgress(0, m_scanMeetings.count());
+    fetchNextScanLog();
+}
+
+void MeetingManager::fetchNextScanLog()
+{
+    if (m_scanIndex >= m_scanMeetings.count()) {
+        m_scanActive = false;
+        emit yearScanResults(m_scanResults);
+        qDeleteAll(m_scanMeetings);
+        m_scanMeetings.clear();
+        return;
+    }
+
+    Meeting *meeting = m_scanMeetings.at(m_scanIndex);
+    QNetworkRequest request(QUrl(meeting->logUrl()));
+    // Past logs are immutable: serve straight from the disk cache when possible
+    request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, &MeetingManager::onScanLogReplyFinished);
+}
+
+void MeetingManager::onScanLogReplyFinished()
+{
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
+
+    if (reply->error() == QNetworkReply::NoError && m_scanIndex < m_scanMeetings.count()) {
+        QString html = QString::fromUtf8(reply->readAll());
+        scanLogContent(html, m_scanMeetings.at(m_scanIndex));
+    }
+    reply->deleteLater();
+
+    m_scanIndex++;
+    emit yearScanProgress(m_scanIndex, m_scanMeetings.count());
+    fetchNextScanLog();
+}
+
+void MeetingManager::scanLogContent(const QString &html, Meeting *meeting)
+{
+    QRegularExpression preRe("<pre>(.*)</pre>", QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpressionMatch preMatch = preRe.match(html);
+    if (!preMatch.hasMatch()) {
+        return;
+    }
+
+    QStringList lines = preMatch.captured(1).split('\n', QString::SkipEmptyParts);
+
+    QRegularExpression tagRe("<[^>]*>");
+    QRegularExpression lineRe("^(\\d{2}:\\d{2}:\\d{2})\\s+(.+)$");
+    const int maxResults = 500;
+
+    for (const QString &line : lines) {
+        if (m_scanResults.count() >= maxResults) {
+            return;
+        }
+
+        QString cleanLine = line;
+        cleanLine.replace(tagRe, "");
+        cleanLine.replace("&lt;", "<");
+        cleanLine.replace("&gt;", ">");
+        cleanLine.replace("&amp;", "&");
+        cleanLine.replace("&nbsp;", " ");
+
+        QRegularExpressionMatch lineMatch = lineRe.match(cleanLine);
+        if (!lineMatch.hasMatch()) {
+            continue;
+        }
+
+        QString timestamp = lineMatch.captured(1);
+        QString rest = lineMatch.captured(2);
+
+        QString username;
+        QString message;
+        if (rest.startsWith('<')) {
+            int endBracket = rest.indexOf('>');
+            if (endBracket > 0) {
+                username = rest.mid(1, endBracket - 1);
+                message = rest.mid(endBracket + 2);
+            }
+        } else {
+            message = rest;
+        }
+
+        bool matches;
+        if (m_scanQuery.isEmpty()) {
+            // Actions mode: collect meeting decisions and assignments
+            matches = message.startsWith("#action", Qt::CaseInsensitive)
+                    || message.startsWith("#agreed", Qt::CaseInsensitive);
+        } else {
+            matches = message.contains(m_scanQuery, Qt::CaseInsensitive)
+                    || username.contains(m_scanQuery, Qt::CaseInsensitive);
+        }
+
+        if (matches) {
+            QVariantMap result;
+            result["meetingTitle"] = meeting->title();
+            result["meetingDate"] = meeting->date();
+            result["filename"] = meeting->filename();
+            result["timestamp"] = timestamp;
+            result["username"] = username;
+            result["message"] = message;
+            m_scanResults.append(result);
+        }
+    }
+}
+
 bool MeetingManager::isFavorite(const QString &meetingId) const
 {
     return m_favorites.contains(meetingId);
@@ -464,22 +707,34 @@ void MeetingManager::onNextMeetingContentReplyFinished()
     reply->deleteLater();
 
     QString rawDate;
-    QString nextMeetingDate = parseNextMeetingFromLog(content, &rawDate);
+    QString agendaUrl;
+    QString nextMeetingDate = parseNextMeetingFromLog(content, &rawDate, &agendaUrl);
 
     if (!nextMeetingDate.isEmpty()) {
         m_settings->setValue("nextMeetingDate", nextMeetingDate);
         m_settings->setValue("nextMeetingDateRaw", rawDate);
-        emit nextMeetingDateChanged(nextMeetingDate, rawDate);
+        m_settings->setValue("nextMeetingAgendaUrl", agendaUrl);
+        emit nextMeetingDateChanged(nextMeetingDate, rawDate, agendaUrl);
     } else if (!m_settings->value("nextMeetingDate").toString().isEmpty()) {
         // No upcoming meeting announced: clear the stale stored date
         m_settings->remove("nextMeetingDate");
         m_settings->remove("nextMeetingDateRaw");
-        emit nextMeetingDateChanged(QString(), QString());
+        m_settings->remove("nextMeetingAgendaUrl");
+        emit nextMeetingDateChanged(QString(), QString(), QString());
     }
 }
 
-QString MeetingManager::parseNextMeetingFromLog(const QString &html, QString *rawDate)
+QString MeetingManager::parseNextMeetingFromLog(const QString &html, QString *rawDate, QString *agendaUrl)
 {
+    // The meeting thread on the forum hosts the agenda for the next meeting too
+    if (agendaUrl) {
+        QRegularExpression linkRe("(https://forum\\.sailfishos\\.org/t/[^\\s<\"&]+)");
+        QRegularExpressionMatch linkMatch = linkRe.match(html);
+        if (linkMatch.hasMatch()) {
+            *agendaUrl = linkMatch.captured(1);
+        }
+    }
+
     // Look for pattern: "#info Next meeting will be held on ... 2025-11-20T1600Z"
     // Format is: YYYY-MM-DDTHHMM Z (no colon in time)
     // The HTML contains span tags, so we need to account for them: #info </span><span class="cmdline">Next meeting...
@@ -519,6 +774,11 @@ QString MeetingManager::parseNextMeetingFromLog(const QString &html, QString *ra
 QString MeetingManager::getNextMeetingDate() const
 {
     return m_settings->value("nextMeetingDate").toString();
+}
+
+QString MeetingManager::getNextMeetingAgendaUrl() const
+{
+    return m_settings->value("nextMeetingAgendaUrl").toString();
 }
 
 void MeetingManager::saveIcsFile(const QString &content)

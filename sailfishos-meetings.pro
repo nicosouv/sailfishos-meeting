@@ -37,6 +37,8 @@ OTHER_FILES += qml/sailfishos-meetings.qml \
     qml/pages/MeetingSummaryPage.qml \
     qml/pages/MeetingLogPage.qml \
     qml/pages/AboutPage.qml \
+    qml/pages/SettingsPage.qml \
+    qml/pages/YearScanPage.qml \
     qml/components/UserAvatar.qml \
     qml/components/UserColorManager.qml \
     qml/components/qmldir \
@@ -55,7 +57,8 @@ CONFIG += sailfishapp_i18n
 # planning to localize your app, remember to comment out the
 # following TRANSLATIONS line. And also do not forget to
 # modify the localized app name in the the .desktop file.
-TRANSLATIONS += translations/sailfishos-meetings-de.ts
+TRANSLATIONS += translations/sailfishos-meetings-de.ts \
+    translations/sailfishos-meetings-fr.ts
 
 DISTFILES += \
     rpm/sailfishos-meetings.changes

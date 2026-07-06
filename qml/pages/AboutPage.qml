@@ -83,12 +83,14 @@ Page {
 
                 Repeater {
                     model: [
-                        qsTr("• Browse meetings from 2020 to present"),
+                        qsTr("• Browse meetings by year"),
                         qsTr("• Slack-style message display with avatars"),
                         qsTr("• Track read/unread meetings"),
                         qsTr("• Next meeting date and calendar integration"),
                         qsTr("• Quick topic navigation"),
                         qsTr("• Search messages and participants"),
+                        qsTr("• Global search and action items across a year"),
+                        qsTr("• Offline reading of cached meetings"),
                         qsTr("• Mark favorite meetings"),
                         qsTr("• Meeting statistics and insights")
                     ]

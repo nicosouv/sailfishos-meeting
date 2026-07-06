@@ -8,14 +8,20 @@ Page {
 
     property string nextMeetingDate: ""
     property string nextMeetingDateRaw: ""
+    property string nextMeetingAgendaUrl: ""
+    property var years: meetingManager.getAvailableYears()
 
     Component.onCompleted: {
         // Load saved date first
         nextMeetingDate = meetingManager.getNextMeetingDate()
+        nextMeetingAgendaUrl = meetingManager.getNextMeetingAgendaUrl()
 
         // Always fetch fresh data to check for new meetings
         // This ensures we always have the most recent meeting's next date
         meetingManager.fetchNextMeetingDate()
+
+        // Replace the fallback year range with the years actually on the server
+        meetingManager.fetchAvailableYears()
     }
 
     Connections {
@@ -23,6 +29,10 @@ Page {
         onNextMeetingDateChanged: {
             nextMeetingDate = date
             nextMeetingDateRaw = rawDate
+            nextMeetingAgendaUrl = agendaUrl
+        }
+        onYearsLoaded: {
+            years = yearList
         }
     }
 
@@ -66,6 +76,11 @@ Page {
                         "SUMMARY:Sailfish OS Community Meeting\n" +
                         "DESCRIPTION:Monthly community meeting to discuss Sailfish OS development and topics\n" +
                         "LOCATION:IRC: #sailfishos-meeting on libera.chat\n" +
+                        "BEGIN:VALARM\n" +
+                        "ACTION:DISPLAY\n" +
+                        "DESCRIPTION:Sailfish OS Community Meeting in 30 minutes\n" +
+                        "TRIGGER:-PT30M\n" +
+                        "END:VALARM\n" +
                         "END:VEVENT\n" +
                         "END:VCALENDAR"
 
@@ -81,6 +96,10 @@ Page {
             MenuItem {
                 text: qsTr("About")
                 onClicked: pageStack.push(Qt.resolvedUrl("AboutPage.qml"))
+            }
+            MenuItem {
+                text: qsTr("Settings")
+                onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
             }
         }
 
@@ -135,12 +154,21 @@ Page {
                             wrapMode: Text.Wrap
                             width: parent.width
                         }
+
+                        Label {
+                            visible: nextMeetingAgendaUrl !== ""
+                            text: "<a href=\"" + nextMeetingAgendaUrl + "\">" + qsTr("Agenda on the forum") + "</a>"
+                            font.pixelSize: Theme.fontSizeSmall
+                            linkColor: Theme.highlightColor
+                            textFormat: Text.StyledText
+                            onLinkActivated: Qt.openUrlExternally(link)
+                        }
                     }
                 }
             }
         }
 
-        model: meetingManager.getAvailableYears()
+        model: years
 
         delegate: BackgroundItem {
             id: delegate

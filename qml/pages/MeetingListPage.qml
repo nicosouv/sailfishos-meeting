@@ -64,6 +64,14 @@ Page {
 
         PullDownMenu {
             MenuItem {
+                text: qsTr("Action items")
+                onClicked: pageStack.push(Qt.resolvedUrl("YearScanPage.qml"), { year: year, actionsMode: true })
+            }
+            MenuItem {
+                text: qsTr("Search this year")
+                onClicked: pageStack.push(Qt.resolvedUrl("YearScanPage.qml"), { year: year, actionsMode: false })
+            }
+            MenuItem {
                 text: showOnlyFavorites ? qsTr("Show all meetings") : qsTr("Show only favorites")
                 visible: countFavorites() > 0
                 onClicked: showOnlyFavorites = !showOnlyFavorites

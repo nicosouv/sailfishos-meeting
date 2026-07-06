@@ -13,25 +13,35 @@ Page {
     property var topicIndices: ([])
     property bool isFavorite: false
     property string searchText: ""
+    property string filterUser: ""
     property var filteredMessages: messages
 
     allowedOrientations: Orientation.All
 
     function filterMessages() {
-        if (searchText === "") {
+        if (searchText === "" && filterUser === "") {
             filteredMessages = messages
-        } else {
-            var filtered = []
-            var searchLower = searchText.toLowerCase()
-            for (var i = 0; i < messages.length; i++) {
-                var msg = messages[i]
-                if (msg.message.toLowerCase().indexOf(searchLower) !== -1 ||
-                    msg.username.toLowerCase().indexOf(searchLower) !== -1) {
-                    filtered.push(msg)
-                }
-            }
-            filteredMessages = filtered
+            return
         }
+        var filtered = []
+        var searchLower = searchText.toLowerCase()
+        for (var i = 0; i < messages.length; i++) {
+            var msg = messages[i]
+            if (filterUser !== "" && msg.username !== filterUser) {
+                continue
+            }
+            if (searchLower !== "" &&
+                msg.message.toLowerCase().indexOf(searchLower) === -1 &&
+                msg.username.toLowerCase().indexOf(searchLower) === -1) {
+                continue
+            }
+            filtered.push(msg)
+        }
+        filteredMessages = filtered
+    }
+
+    function toggleUserFilter(name) {
+        filterUser = (filterUser === name) ? "" : name
     }
 
     Component.onCompleted: {
@@ -70,6 +80,10 @@ Page {
         filterMessages()
     }
 
+    onFilterUserChanged: {
+        filterMessages()
+    }
+
     // Avoid rebuilding the whole list on every keystroke
     Timer {
         id: searchDebounce
@@ -86,6 +100,10 @@ Page {
                 onClicked: meetingManager.toggleFavorite(meeting.filename)
             }
             MenuItem {
+                text: qsTr("Copy link")
+                onClicked: Clipboard.text = meeting.url
+            }
+            MenuItem {
                 text: qsTr("Topics") + " (" + topicIndices.length + ")"
                 visible: topicIndices.length > 0
                 onClicked: topicPanel.open = true
@@ -99,6 +117,7 @@ Page {
                     topicIndices = []
                     searchText = ""
                     searchField.text = ""
+                    filterUser = ""
                     meetingManager.fetchHtmlContent(meeting.logUrl)
                 }
             }
@@ -148,10 +167,25 @@ Page {
 
             Label {
                 x: Theme.horizontalPageMargin
-                visible: searchText !== ""
+                visible: searchText !== "" || filterUser !== ""
                 text: qsTr("%1 of %2 messages").arg(filteredMessages.length).arg(messages.length)
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryHighlightColor
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: filterUser !== ""
+                text: qsTr("Messages from %1 — tap to clear").arg(filterUser)
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.highlightColor
+                truncationMode: TruncationMode.Fade
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: filterUser = ""
+                }
             }
 
             // Statistics section
@@ -238,6 +272,12 @@ Page {
                 property int avatarWidth: Theme.iconSizeSmall + Theme.paddingSmall
                 property int textLeftPosition: leftMargin + avatarWidth + Theme.paddingMedium
 
+                property bool mentionsMe: {
+                    var nick = meetingManager.myNick
+                    if (nick === "" || !modelData.message) return false
+                    return modelData.message.toLowerCase().indexOf(nick.toLowerCase()) !== -1
+                }
+
                 height: isSection ? sectionHeader.height : (messageContent.y + messageContent.height + Theme.paddingMedium)
 
                 // Section/Header style (tous les messages commençant par #)
@@ -307,7 +347,11 @@ Page {
                 Rectangle {
                     anchors.fill: parent
                     visible: !isSection
-                    color: modelData.isTopic ? Theme.rgba(Theme.highlightBackgroundColor, 0.1) : "transparent"
+                    color: {
+                        if (modelData.isTopic) return Theme.rgba(Theme.highlightBackgroundColor, 0.1)
+                        if (mentionsMe) return Theme.rgba(Theme.highlightColor, 0.15)
+                        return "transparent"
+                    }
                 }
 
                 // Avatar (toujours à la même position)
@@ -317,6 +361,11 @@ Page {
                     y: Theme.paddingMedium
                     username: modelData.username
                     visible: !isSection && modelData.username !== "" && showHeader
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: toggleUserFilter(modelData.username)
+                    }
                 }
 
                 // Contenu du message (toujours à la même position X)
@@ -339,6 +388,11 @@ Page {
                             font.pixelSize: Theme.fontSizeSmall
                             font.bold: true
                             color: avatar.userColor
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: toggleUserFilter(modelData.username)
+                            }
                         }
 
                         Label {

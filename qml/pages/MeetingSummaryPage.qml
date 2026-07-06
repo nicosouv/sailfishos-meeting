@@ -38,6 +38,10 @@ Page {
                 }
             }
             MenuItem {
+                text: qsTr("Copy link")
+                onClicked: Clipboard.text = meeting.url
+            }
+            MenuItem {
                 text: qsTr("Refresh")
                 onClicked: meetingManager.fetchHtmlContent(meeting.url)
             }
