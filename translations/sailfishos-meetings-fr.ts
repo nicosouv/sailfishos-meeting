@@ -16,12 +16,12 @@
         <translation>Fonctionnalités</translation>
     </message>
     <message>
-        <source>• Browse meetings by year</source>
-        <translation>• Parcourir les réunions par année</translation>
+        <source>• Browse meetings by year, back to the Mer days</source>
+        <translation>• Parcourir les réunions par année, jusqu&apos;à l&apos;époque de Mer</translation>
     </message>
     <message>
-        <source>• Slack-style message display with avatars</source>
-        <translation>• Affichage des messages façon Slack avec avatars</translation>
+        <source>• Choose how notes and conversations are displayed</source>
+        <translation>• Choisir l&apos;affichage des notes et des conversations</translation>
     </message>
     <message>
         <source>• Track read/unread meetings</source>
@@ -240,6 +240,70 @@
     <message>
         <source>Messages mentioning this nick are highlighted in meeting logs</source>
         <translation>Les messages mentionnant ce pseudo sont surlignés dans les journaux</translation>
+    </message>
+    <message>
+        <source>Meeting notes</source>
+        <translation>Notes de réunion</translation>
+    </message>
+    <message>
+        <source>Style</source>
+        <translation>Style</translation>
+    </message>
+    <message>
+        <source>How #info, #topic, #action and other meeting commands are shown</source>
+        <translation>Affichage des #info, #topic, #action et autres commandes de réunion</translation>
+    </message>
+    <message>
+        <source>Cards</source>
+        <translation>Cartes</translation>
+    </message>
+    <message>
+        <source>Banners</source>
+        <translation>Bandeaux</translation>
+    </message>
+    <message>
+        <source>Compact</source>
+        <translation>Compact</translation>
+    </message>
+    <message>
+        <source>Quotes</source>
+        <translation>Citations</translation>
+    </message>
+    <message>
+        <source>Conversation</source>
+        <translation>Conversation</translation>
+    </message>
+    <message>
+        <source>How the discussion between participants is shown</source>
+        <translation>Affichage des échanges entre les participants</translation>
+    </message>
+    <message>
+        <source>Avatars</source>
+        <translation>Avatars</translation>
+    </message>
+    <message>
+        <source>Bubbles</source>
+        <translation>Bulles</translation>
+    </message>
+    <message>
+        <source>Columns</source>
+        <translation>Colonnes</translation>
+    </message>
+    <message>
+        <source>Rust update should be doable, contributions welcome.</source>
+        <translation>La mise à jour de Rust est faisable, les contributions sont bienvenues.</translation>
+    </message>
+    <message>
+        <source>General discussion (15 min)</source>
+        <translation>Discussion générale (15 min)</translation>
+    </message>
+    <message>
+        <source>Are there any plans to update Rust?</source>
+        <translation>Y a-t-il des plans pour mettre à jour Rust ?</translation>
+    </message>
+    <message>
+        <source>Let&apos;s see how far it goes, we already have Go in good shape.</source>
+        <translation>On verra jusqu&apos;où ça va, Go est déjà en bon état.</translation>
     </message>
 </context>
 <context>

@@ -1,12 +1,14 @@
 # SailfishOS Meetings - Sailfish OS Meeting Logs Viewer
 
-A native Sailfish OS application for browsing and reading Sailfish OS community meeting logs from [irclogs.sailfishos.org](https://irclogs.sailfishos.org/meetings/sailfishos-meeting/).
+A native Sailfish OS application for browsing and reading Sailfish OS community meeting logs from [irclogs.sailfishos.org](https://irclogs.sailfishos.org/meetings/sailfishos-meeting/), including the older [Mer project meetings](https://irclogs.sailfishos.org/meetings/mer-meeting/) (2011-2020).
 
 ## Features
 
-- Browse meetings by year (auto-detected from the server)
+- Browse meetings by year (auto-detected from the server), Mer and Sailfish OS series merged
 - View meeting summaries with topics, participants, and action items
 - Read full IRC conversation logs with colorized nicks and avatars
+- Selectable display styles for meeting notes (`#info`, `#topic`...) and for the conversation
+- Wrapped `#info <nick>` quotes are joined back into readable paragraphs, Jolla answers highlighted
 - Global search and aggregated `#action`/`#agreed` items across a year
 - Filter log messages by participant, highlight your own nick
 - Favorites, read/unread tracking, meeting statistics

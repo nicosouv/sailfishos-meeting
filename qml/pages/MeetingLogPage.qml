@@ -27,7 +27,8 @@ Page {
         var searchLower = searchText.toLowerCase()
         for (var i = 0; i < messages.length; i++) {
             var msg = messages[i]
-            if (filterUser !== "" && msg.username !== filterUser) {
+            // A nick can also appear as the author quoted by "#info <nick>"
+            if (filterUser !== "" && msg.username !== filterUser && msg.quotedNick !== filterUser) {
                 continue
             }
             if (searchLower !== "" &&
@@ -64,7 +65,7 @@ Page {
                 if (messages[i].isTopic) {
                     topics.push({
                         index: i,
-                        message: messages[i].message
+                        message: messages[i].body
                     })
                 }
             }
@@ -145,9 +146,10 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: meeting.date + " - " + meeting.time
+                text: meeting.seriesName + " — " + meeting.date + " - " + meeting.time
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.secondaryColor
+                truncationMode: TruncationMode.Fade
             }
 
             // Search field
@@ -252,25 +254,19 @@ Page {
             model: filteredMessages
 
             delegate: Item {
+                id: delegateItem
                 width: listView.width
+                height: isCommand ? commandMessage.height : chatMessage.height
+
+                property bool isCommand: modelData.isCommand
 
                 property bool showHeader: {
                     if (index === 0) return true
                     if (modelData.username === "") return true
-                    if (modelData.isTopic) return true
 
                     var prevMsg = filteredMessages[index - 1]
-                    return prevMsg.username !== modelData.username
+                    return prevMsg.username !== modelData.username || prevMsg.isCommand
                 }
-
-                property bool isSection: {
-                    var msg = modelData.message || ""
-                    return msg.indexOf("#") === 0
-                }
-
-                property int leftMargin: Theme.horizontalPageMargin
-                property int avatarWidth: Theme.iconSizeSmall + Theme.paddingSmall
-                property int textLeftPosition: leftMargin + avatarWidth + Theme.paddingMedium
 
                 property bool mentionsMe: {
                     var nick = meetingManager.myNick
@@ -278,179 +274,24 @@ Page {
                     return modelData.message.toLowerCase().indexOf(nick.toLowerCase()) !== -1
                 }
 
-                height: isSection ? sectionHeader.height : (messageContent.y + messageContent.height + Theme.paddingMedium)
-
-                // Section/Header style (tous les messages commençant par #)
-                Column {
-                    id: sectionHeader
-                    visible: isSection
+                CommandMessage {
+                    id: commandMessage
                     width: parent.width
-                    spacing: 0
-
-                    // Ligne de séparation en haut
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: Theme.secondaryColor
-                        opacity: 0.15
-                    }
-
-                    Row {
-                        id: sectionContent
-                        x: Theme.horizontalPageMargin
-                        width: parent.width - Theme.horizontalPageMargin * 2
-                        height: Math.max(sectionIcon.height, sectionLabel.height) + Theme.paddingMedium * 2
-                        spacing: Theme.paddingMedium
-
-                        // Icône selon le type
-                        Image {
-                            id: sectionIcon
-                            width: Theme.iconSizeSmall
-                            height: Theme.iconSizeSmall
-                            y: Theme.paddingMedium
-                            source: {
-                                var msg = modelData.message.toLowerCase()
-                                if (msg.indexOf("#topic") === 0) return "image://theme/icon-m-events"
-                                if (msg.indexOf("#info") === 0) return "image://theme/icon-m-about"
-                                if (msg.indexOf("#link") === 0) return "image://theme/icon-m-link"
-                                if (msg.indexOf("#action") === 0) return "image://theme/icon-m-add"
-                                if (msg.indexOf("#agreed") === 0) return "image://theme/icon-m-accept"
-                                return "image://theme/icon-m-note"
-                            }
-                        }
-
-                        Label {
-                            id: sectionLabel
-                            width: parent.width - sectionIcon.width - Theme.paddingMedium
-                            y: Theme.paddingMedium
-                            text: modelData.richMessage
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.bold: true
-                            color: Theme.primaryColor
-                            linkColor: Theme.highlightColor
-                            wrapMode: Text.Wrap
-                            textFormat: Text.StyledText
-                            onLinkActivated: Qt.openUrlExternally(link)
-                        }
-                    }
-
-                    // Ligne de séparation en bas
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: Theme.secondaryColor
-                        opacity: 0.15
-                    }
+                    visible: delegateItem.isCommand
+                    message: delegateItem.isCommand ? modelData : null
+                    style: meetingManager.commandStyle
+                    onNickClicked: toggleUserFilter(name)
                 }
 
-                // Background pour messages normaux
-                Rectangle {
-                    anchors.fill: parent
-                    visible: !isSection
-                    color: {
-                        if (modelData.isTopic) return Theme.rgba(Theme.highlightBackgroundColor, 0.1)
-                        if (mentionsMe) return Theme.rgba(Theme.highlightColor, 0.15)
-                        return "transparent"
-                    }
-                }
-
-                // Avatar (toujours à la même position)
-                UserAvatar {
-                    id: avatar
-                    x: leftMargin
-                    y: Theme.paddingMedium
-                    username: modelData.username
-                    visible: !isSection && modelData.username !== "" && showHeader
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: toggleUserFilter(modelData.username)
-                    }
-                }
-
-                // Contenu du message (toujours à la même position X)
-                Column {
-                    id: messageContent
-                    visible: !isSection
-                    x: textLeftPosition
-                    y: Theme.paddingMedium
-                    width: parent.width - textLeftPosition - Theme.horizontalPageMargin
-                    spacing: 0
-
-                    // Username et timestamp (seulement si showHeader)
-                    Row {
-                        width: parent.width
-                        spacing: Theme.paddingMedium
-                        visible: modelData.username !== "" && showHeader
-
-                        Label {
-                            text: modelData.username
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.bold: true
-                            color: avatar.userColor
-
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: toggleUserFilter(modelData.username)
-                            }
-                        }
-
-                        Label {
-                            text: modelData.timestamp
-                            font.pixelSize: Theme.fontSizeExtraSmall
-                            color: Theme.secondaryColor
-                            anchors.baseline: parent.children[0].baseline
-                        }
-                    }
-
-                    // Spacer entre username et message
-                    Item {
-                        width: 1
-                        height: (modelData.username !== "" && showHeader) ? Theme.paddingSmall : 0
-                    }
-
-                    // Message avec timestamp groupé
-                    Row {
-                        width: parent.width
-                        spacing: Theme.paddingMedium
-                        visible: modelData.username !== ""
-
-                        Label {
-                            width: parent.width - (groupedTimestamp.visible ? groupedTimestamp.width + Theme.paddingMedium : 0)
-                            text: modelData.richMessage
-                            font.pixelSize: Theme.fontSizeSmall
-                            font.italic: modelData.isAction
-                            color: modelData.isTopic ? Theme.highlightColor : Theme.primaryColor
-                            linkColor: Theme.highlightColor
-                            wrapMode: Text.Wrap
-                            textFormat: Text.StyledText
-                            onLinkActivated: Qt.openUrlExternally(link)
-                        }
-
-                        Label {
-                            id: groupedTimestamp
-                            visible: !showHeader
-                            text: modelData.timestamp
-                            font.pixelSize: Theme.fontSizeTiny
-                            color: Theme.secondaryColor
-                            opacity: 0.6
-                            anchors.baseline: parent.children[0].baseline
-                        }
-                    }
-
-                    // Messages système (sans username)
-                    Label {
-                        visible: modelData.username === ""
-                        width: parent.width
-                        text: modelData.timestamp + " - " + modelData.richMessage
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: Theme.secondaryColor
-                        linkColor: Theme.highlightColor
-                        wrapMode: Text.Wrap
-                        textFormat: Text.StyledText
-                        font.italic: true
-                        onLinkActivated: Qt.openUrlExternally(link)
-                    }
+                ChatMessage {
+                    id: chatMessage
+                    width: parent.width
+                    visible: !delegateItem.isCommand
+                    message: delegateItem.isCommand ? null : modelData
+                    style: meetingManager.chatStyle
+                    showHeader: delegateItem.showHeader
+                    mentionsMe: delegateItem.mentionsMe
+                    onNickClicked: toggleUserFilter(name)
                 }
             }
 

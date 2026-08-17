@@ -6,6 +6,8 @@
 #include <QNetworkReply>
 #include <QList>
 #include <QSettings>
+#include <QRegularExpression>
+#include <functional>
 #include "meeting.h"
 #include "meetingstatistics.h"
 
@@ -15,6 +17,8 @@ class MeetingManager : public QObject
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
     Q_PROPERTY(QString myNick READ myNick WRITE setMyNick NOTIFY myNickChanged)
+    Q_PROPERTY(int commandStyle READ commandStyle WRITE setCommandStyle NOTIFY commandStyleChanged)
+    Q_PROPERTY(int chatStyle READ chatStyle WRITE setChatStyle NOTIFY chatStyleChanged)
 
 public:
     explicit MeetingManager(QObject *parent = nullptr);
@@ -23,6 +27,10 @@ public:
     QString error() const { return m_error; }
     QString myNick() const;
     void setMyNick(const QString &nick);
+    int commandStyle() const;
+    void setCommandStyle(int style);
+    int chatStyle() const;
+    void setChatStyle(int style);
 
     Q_INVOKABLE void fetchMeetingsForYear(int year);
     Q_INVOKABLE void fetchHtmlContent(const QString &url);
@@ -51,20 +59,27 @@ signals:
     void favoritesChanged();
     void readStatusChanged();
     void myNickChanged();
+    void commandStyleChanged();
+    void chatStyleChanged();
     void yearsLoaded(QVariantList yearList);
     void yearScanProgress(int done, int total);
     void yearScanResults(QVariantList results);
     void nextMeetingDateChanged(QString date, QString rawDate, QString agendaUrl);
 
 private slots:
-    void onMeetingListReplyFinished();
     void onHtmlContentReplyFinished();
     void onNextMeetingContentReplyFinished();
-    void onYearListReplyFinished();
-    void onScanListReplyFinished();
     void onScanLogReplyFinished();
 
 private:
+    // Collects the directory listings of every log series in parallel
+    struct IndexFetch {
+        int pending;
+        QString html;
+        QString error;
+        std::function<void(const QString &, const QString &)> callback;
+    };
+
     QNetworkAccessManager *m_networkManager;
     QSettings *m_settings;
     bool m_loading;
@@ -83,8 +98,14 @@ private:
     void setError(const QString &error);
     QList<Meeting*> parseMeetingList(const QString &html);
     QString parseNextMeetingFromLog(const QString &html, QString *rawDate = nullptr, QString *agendaUrl = nullptr);
+    static QString lastFutureStamp(QRegularExpressionMatchIterator matches);
     void fetchLogForNextMeeting(Meeting *meeting);
     QNetworkReply* retryFromCache(QNetworkReply *reply);
+    void fetchIndexes(const QStringList &urls,
+                      const std::function<void(const QString &, const QString &)> &callback);
+    void fetchYearIndexes(int year,
+                          const std::function<void(const QString &, const QString &)> &callback);
+    void handleIndexReply(QNetworkReply *reply, IndexFetch *fetch);
     void fetchNextScanLog();
     void scanLogContent(const QString &html, Meeting *meeting);
 };

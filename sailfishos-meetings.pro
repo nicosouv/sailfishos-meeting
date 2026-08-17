@@ -26,6 +26,7 @@ SOURCES += src/sailfishos-meetings.cpp \
 HEADERS += \
     src/meetingmanager.h \
     src/meeting.h \
+    src/meetingsources.h \
     src/ircmessage.h \
     src/meetingtopic.h \
     src/meetingstatistics.h
@@ -41,6 +42,8 @@ OTHER_FILES += qml/sailfishos-meetings.qml \
     qml/pages/YearScanPage.qml \
     qml/components/UserAvatar.qml \
     qml/components/UserColorManager.qml \
+    qml/components/ChatMessage.qml \
+    qml/components/CommandMessage.qml \
     qml/components/qmldir \
     rpm/sailfishos-meetings.spec \
     rpm/sailfishos-meetings.yaml \

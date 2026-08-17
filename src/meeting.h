@@ -16,6 +16,8 @@ class Meeting : public QObject
     Q_PROPERTY(QString logUrl READ logUrl CONSTANT)
     Q_PROPERTY(QString filename READ filename CONSTANT)
     Q_PROPERTY(QString month READ month CONSTANT)
+    Q_PROPERTY(QString series READ series CONSTANT)
+    Q_PROPERTY(QString seriesName READ seriesName CONSTANT)
 
 public:
     explicit Meeting(const QString &filename, QObject *parent = nullptr);
@@ -27,15 +29,18 @@ public:
     QString logUrl() const;
     QString filename() const;
     QString month() const;
+    QString series() const { return m_series; }
+    QString seriesName() const;
 
     QDateTime dateTime() const { return m_dateTime; }
 
 private:
     QString m_filename;
     QDateTime m_dateTime;
-    QString m_baseUrl;
+    QString m_series;
 
     void parseFilename();
+    QString baseUrl() const;
 };
 
 #endif // MEETING_H

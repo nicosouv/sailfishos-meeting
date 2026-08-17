@@ -17,13 +17,22 @@ Sailfish OS application for browsing and reading Sailfish OS community meeting l
 **C++ Backend** (src/):
 - `meetingmanager.h/cpp`: Manages fetching and parsing of meeting data from irclogs.sailfishos.org
 - `meeting.h/cpp`: Data model for individual meetings with Q_PROPERTY exports to QML
+- `meetingsources.h`: Log series (mer-meeting / sailfishos-meeting), their year ranges and URLs
+- `ircmessage.h/cpp`: One log line: nick, meetbot command, quoted nick, rich text
 - `sailfishos-meetings.cpp`: Entry point that registers QML types and creates singleton MeetingManager
 
 **QML Frontend** (qml/pages/):
-- `YearSelectionPage.qml`: Initial page listing available years (2024+)
+- `YearSelectionPage.qml`: Initial page listing available years (2011+)
 - `MeetingListPage.qml`: Lists all meetings for selected year
 - `MeetingSummaryPage.qml`: Displays meeting summary (.html) with formatted content
-- `MeetingLogPage.qml`: Displays full IRC log (.log.html) with timestamp and username colorization
+- `MeetingLogPage.qml`: Displays full IRC log (.log.html), one delegate per message
+- `SettingsPage.qml`: Nick and display styles, with live previews
+
+**QML Components** (qml/components/):
+- `CommandMessage.qml`: Renders a meetbot command in the style chosen in the settings
+- `ChatMessage.qml`: Renders a conversation line in the style chosen in the settings
+- Display styles are plain ints stored in QSettings via `MeetingManager.commandStyle` / `chatStyle`;
+  the order of the options must match the ComboBox entries in `SettingsPage.qml`
 
 ## Building
 
@@ -51,11 +60,16 @@ Packages are automatically attached to GitHub releases.
 
 ## Data Sources
 
-- **Base URL**: https://irclogs.sailfishos.org/meetings/sailfishos-meeting/
+Two log series share the same MeetBot layout and are merged per year:
+
+- **Sailfish OS meetings** (March 2020 onwards): https://irclogs.sailfishos.org/meetings/sailfishos-meeting/
+- **Mer meetings** (2011 to February 2020): https://irclogs.sailfishos.org/meetings/mer-meeting/
 - **File patterns**:
-  - Summary: `sailfishos-meeting.YYYY-MM-DD-HH.MM.html`
-  - Full log: `sailfishos-meeting.YYYY-MM-DD-HH.MM.log.html`
+  - Summary: `<series>.YYYY-MM-DD-HH.MM.html`
+  - Full log: `<series>.YYYY-MM-DD-HH.MM.log.html`
 - Meetings are parsed via regex and sorted by date (newest first)
+- The next meeting date comes from the last log: any wording of "Next ... held on"
+  followed by a `YYYY-MM-DDTHHMMZ` stamp
 
 ## Important Notes
 

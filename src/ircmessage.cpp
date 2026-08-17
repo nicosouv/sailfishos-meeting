@@ -2,6 +2,19 @@
 #include <QCryptographicHash>
 #include <QRegularExpression>
 
+// Commands understood by meetbot; anything else starting with '#' is just text
+// (a channel name for instance)
+static const QStringList &knownCommands()
+{
+    static const QStringList commands = QStringList()
+            << "topic" << "subtopic" << "info" << "link" << "action" << "agreed"
+            << "accepted" << "rejected" << "idea" << "help" << "halp" << "nick"
+            << "chair" << "unchair" << "undo" << "save" << "commands"
+            << "startmeeting" << "endmeeting" << "meetingname" << "meetingtopic"
+            << "lurk" << "unlurk" << "restrictlogs";
+    return commands;
+}
+
 IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
                        const QString &message, QObject *parent)
     : QObject(parent)
@@ -15,6 +28,7 @@ IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
     m_userColor = generateColorForUsername(username);
     m_richMessage = buildRichMessage(message);
     parseMessageType();
+    m_richBody = buildRichMessage(m_body);
 }
 
 QString IrcMessage::buildRichMessage(const QString &message)
@@ -29,17 +43,70 @@ QString IrcMessage::buildRichMessage(const QString &message)
 
 void IrcMessage::parseMessageType()
 {
-    // Detect message type
-    if (m_message.startsWith("#topic", Qt::CaseInsensitive)) {
-        m_isTopic = true;
-        m_isCommand = true;
-    } else if (m_message.startsWith("#") &&
-               (m_message.startsWith("#info") || m_message.startsWith("#link") ||
-                m_message.startsWith("#action") || m_message.startsWith("#agreed"))) {
-        m_isCommand = true;
-    } else if (m_username.isEmpty() && m_message.contains("*")) {
-        m_isAction = true;
+    m_body = m_message;
+
+    if (!m_message.startsWith('#')) {
+        return;
     }
+
+    // Split "#command rest of the line"
+    int space = m_message.indexOf(QRegularExpression("\\s"));
+    QString command = (space > 0 ? m_message.mid(1, space - 1) : m_message.mid(1)).toLower();
+
+    if (!knownCommands().contains(command)) {
+        return;
+    }
+
+    m_command = command;
+    m_isCommand = true;
+    m_isTopic = (command == "topic" || command == "subtopic");
+    m_body = space > 0 ? m_message.mid(space + 1).trimmed() : QString();
+
+    // A command often quotes somebody else: "#info <Jolla> the answer is..."
+    QRegularExpression nickRe("^<([A-Za-z0-9_\\[\\]{}\\\\^`|-]{1,32})>\\s*");
+    QRegularExpressionMatch nickMatch = nickRe.match(m_body);
+    if (nickMatch.hasMatch()) {
+        m_quotedNick = nickMatch.captured(1);
+        m_body = m_body.mid(nickMatch.capturedLength()).trimmed();
+
+        // A quote pasted into meetbot sometimes repeats its own marker in the
+        // middle of a line: drop those leftovers
+        QRegularExpression repeatRe("\\s*#" + m_command + "\\s+<"
+                                    + QRegularExpression::escape(m_quotedNick) + ">\\s*",
+                                    QRegularExpression::CaseInsensitiveOption);
+        m_body.replace(repeatRe, " ");
+    }
+}
+
+bool IrcMessage::isJolla() const
+{
+    return m_quotedNick.compare("Jolla", Qt::CaseInsensitive) == 0;
+}
+
+bool IrcMessage::continues(const IrcMessage *previous) const
+{
+    // Meetbot hard-wraps quoted answers, repeating "#info <nick>" on every
+    // line. Only glue those back: plain commands stay separate entries.
+    return previous
+            && !m_quotedNick.isEmpty()
+            && m_isCommand
+            && previous->isCommand()
+            && m_command == previous->command()
+            && m_username == previous->username()
+            && m_quotedNick.compare(previous->quotedNick(), Qt::CaseInsensitive) == 0;
+}
+
+void IrcMessage::appendBody(const QString &text)
+{
+    if (text.isEmpty()) {
+        return;
+    }
+
+    m_body = m_body.isEmpty() ? text : m_body + " " + text;
+    m_message = m_message.isEmpty() ? text : m_message + " " + text;
+    m_richBody = buildRichMessage(m_body);
+    m_richMessage = buildRichMessage(m_message);
+    emit messageChanged();
 }
 
 QString IrcMessage::generateColorForUsername(const QString &username)

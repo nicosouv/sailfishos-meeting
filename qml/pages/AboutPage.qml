@@ -83,8 +83,8 @@ Page {
 
                 Repeater {
                     model: [
-                        qsTr("• Browse meetings by year"),
-                        qsTr("• Slack-style message display with avatars"),
+                        qsTr("• Browse meetings by year, back to the Mer days"),
+                        qsTr("• Choose how notes and conversations are displayed"),
                         qsTr("• Track read/unread meetings"),
                         qsTr("• Next meeting date and calendar integration"),
                         qsTr("• Quick topic navigation"),
