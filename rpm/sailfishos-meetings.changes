@@ -8,6 +8,10 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
+* Tue Aug 18 2026 Poulpe <poulpe@example.com> 2.1.1-1
+- Keep the author's line breaks when merging wrapped meeting notes
+- Shrink the log statistics to a single line
+
 * Mon Aug 17 2026 Poulpe <poulpe@example.com> 2.1.0-1
 - Add Mer meeting logs (2011-2020), merged per year with Sailfish OS meetings
 - Add selectable display styles for meeting notes and conversation
