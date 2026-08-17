@@ -190,49 +190,29 @@ Page {
                 }
             }
 
-            // Statistics section
-            Column {
-                width: parent.width
-                spacing: Theme.paddingSmall
+            // Statistics, kept on a single line to leave room for reading
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
                 visible: stats !== null
-
-                Item { width: 1; height: Theme.paddingSmall }
-
-                Row {
-                    x: Theme.horizontalPageMargin
-                    spacing: Theme.paddingLarge
-
-                    Label {
-                        text: stats ? qsTr("%1 messages").arg(stats.messageCount) : ""
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: Theme.secondaryHighlightColor
+                text: {
+                    if (!stats) return ""
+                    var parts = [qsTr("%1 messages").arg(stats.messageCount),
+                                 qsTr("%1 participants").arg(stats.participantCount)]
+                    if (stats.duration !== "") {
+                        parts.push(stats.duration)
                     }
-
-                    Label {
-                        text: stats ? qsTr("%1 participants").arg(stats.participantCount) : ""
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: Theme.secondaryHighlightColor
+                    if (stats.topContributor !== "") {
+                        parts.push(qsTr("top %1").arg(stats.topContributor))
                     }
-
-                    Label {
-                        visible: stats && stats.duration !== ""
-                        text: stats ? stats.duration : ""
-                        font.pixelSize: Theme.fontSizeExtraSmall
-                        color: Theme.secondaryHighlightColor
-                    }
+                    return parts.join(" · ")
                 }
-
-                Label {
-                    x: Theme.horizontalPageMargin
-                    width: parent.width - 2 * Theme.horizontalPageMargin
-                    visible: stats && stats.topContributor !== ""
-                    text: stats ? qsTr("Top: %1 (%2 msgs)").arg(stats.topContributor).arg(stats.topContributorCount) : ""
-                    font.pixelSize: Theme.fontSizeExtraSmall
-                    color: Theme.highlightColor
-                }
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                truncationMode: TruncationMode.Fade
             }
 
-            Item { width: 1; height: Theme.paddingMedium }
+            Item { width: 1; height: Theme.paddingSmall }
 
             BusyIndicator {
                 anchors.horizontalCenter: parent.horizontalCenter

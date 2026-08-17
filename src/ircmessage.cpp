@@ -2,6 +2,13 @@
 #include <QCryptographicHash>
 #include <QRegularExpression>
 
+// Quotes pasted into meetbot come pre-wrapped around 60 to 75 characters.
+// Lines shorter than the minimum are always deliberate breaks, and lines
+// longer than the maximum are stretched by an unbreakable URL: neither tells
+// us anything about the wrap width of the block.
+static const int MinimumWrapWidth = 55;
+static const int MaximumWrapWidth = 90;
+
 // Commands understood by meetbot; anything else starting with '#' is just text
 // (a channel name for instance)
 static const QStringList &knownCommands()
@@ -24,11 +31,22 @@ IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
     , m_isAction(false)
     , m_isTopic(false)
     , m_isCommand(false)
+    , m_lastLineLength(0)
+    , m_maxLineLength(0)
 {
     m_userColor = generateColorForUsername(username);
     m_richMessage = buildRichMessage(message);
     parseMessageType();
     m_richBody = buildRichMessage(m_body);
+    rememberLine(m_body);
+}
+
+void IrcMessage::rememberLine(const QString &line)
+{
+    m_lastLineLength = line.length();
+    if (m_lastLineLength <= MaximumWrapWidth) {
+        m_maxLineLength = qMax(m_maxLineLength, m_lastLineLength);
+    }
 }
 
 QString IrcMessage::buildRichMessage(const QString &message)
@@ -38,6 +56,8 @@ QString IrcMessage::buildRichMessage(const QString &message)
     QString escaped = message.toHtmlEscaped();
     QRegularExpression urlRe("((?:https?|ftp)://[^\\s<]+)");
     escaped.replace(urlRe, "<a href=\"\\1\">\\1</a>");
+    // StyledText collapses whitespace, keep the paragraph breaks visible
+    escaped.replace(QChar('\n'), QStringLiteral("<br>"));
     return escaped;
 }
 
@@ -99,11 +119,29 @@ bool IrcMessage::continues(const IrcMessage *previous) const
 void IrcMessage::appendBody(const QString &text)
 {
     if (text.isEmpty()) {
+        // An empty "#info <nick>" line separates two paragraphs: remember it
+        // so the next line starts on its own line
+        m_lastLineLength = 0;
         return;
     }
 
-    m_body = m_body.isEmpty() ? text : m_body + " " + text;
-    m_message = m_message.isEmpty() ? text : m_message + " " + text;
+    if (m_body.isEmpty()) {
+        m_body = text;
+        m_message = m_message.isEmpty() ? text : m_message + " " + text;
+    } else {
+        // When the previous line stopped early enough for the next word to
+        // have fit, the author broke the line on purpose: keep that break
+        // instead of gluing the two paragraphs together.
+        const int wrapWidth = qBound(MinimumWrapWidth, m_maxLineLength, MaximumWrapWidth);
+        const QString firstWord = text.section(' ', 0, 0);
+        const bool wrapped = m_lastLineLength + 1 + firstWord.length() > wrapWidth;
+        const QString separator = wrapped ? QStringLiteral(" ") : QStringLiteral("\n");
+
+        m_body += separator + text;
+        m_message += separator + text;
+    }
+
+    rememberLine(text);
     m_richBody = buildRichMessage(m_body);
     m_richMessage = buildRichMessage(m_message);
     emit messageChanged();

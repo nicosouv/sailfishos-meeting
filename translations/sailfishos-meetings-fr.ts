@@ -196,6 +196,10 @@
         <translation>Top : %1 (%2 msgs)</translation>
     </message>
     <message>
+        <source>top %1</source>
+        <translation>top %1</translation>
+    </message>
+    <message>
         <source>Jump to Topic</source>
         <translation>Aller au sujet</translation>
     </message>

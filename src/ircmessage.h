@@ -66,8 +66,13 @@ private:
     bool m_isAction;
     bool m_isTopic;
     bool m_isCommand;
+    // Line lengths of the merged block, used to tell a forced wrap from a
+    // deliberate line break
+    int m_lastLineLength;
+    int m_maxLineLength;
 
     void parseMessageType();
+    void rememberLine(const QString &line);
     static QString buildRichMessage(const QString &message);
 };
 
