@@ -8,6 +8,13 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
+* Mon Aug 17 2026 Poulpe <poulpe@example.com> 2.1.0-1
+- Add Mer meeting logs (2011-2020), merged per year with Sailfish OS meetings
+- Add selectable display styles for meeting notes and conversation
+- Join wrapped "#info <nick>" quotes into single paragraphs
+- Highlight Jolla answers in meeting notes
+- Detect the next meeting date whatever the announcement wording
+
 * Tue Nov 12 2024 Poulpe <poulpe@example.com> 1.5.0-1
 - Add next meeting date detection and display
 - Add calendar integration to add meetings to calendar
