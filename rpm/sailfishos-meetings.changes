@@ -8,6 +8,18 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
+* Tue Aug 18 2026 Poulpe <poulpe@example.com> 2.2.0-1
+- Add the meeting summary page: action items, decisions and who was present
+- Tap a summary entry to jump to that line of the log
+- Add "meeting notes only" filter, older/newer meeting navigation
+- Add per message context menu: copy a link to a single log line
+- Add followed nicks, highlight whole words only
+- Add storage usage and data clearing in the settings
+- Show the real application version
+- Nick colors are now stable across restarts
+- Year scans download in parallel and can be stopped
+- Add parser tests, run by the CI
+
 * Tue Aug 18 2026 Poulpe <poulpe@example.com> 2.1.1-1
 - Keep the author's line breaks when merging wrapped meeting notes
 - Shrink the log statistics to a single line
