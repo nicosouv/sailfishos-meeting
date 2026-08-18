@@ -41,7 +41,7 @@ Page {
 
                 Label {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "v2.0.0"
+                    text: "v" + meetingManager.appVersion
                     font.pixelSize: Theme.fontSizeSmall
                     color: Theme.secondaryColor
                 }

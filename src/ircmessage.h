@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QString>
-#include <QColor>
 
 class IrcMessage : public QObject
 {
@@ -12,7 +11,6 @@ class IrcMessage : public QObject
     Q_PROPERTY(QString username READ username CONSTANT)
     Q_PROPERTY(QString message READ message NOTIFY messageChanged)
     Q_PROPERTY(QString richMessage READ richMessage NOTIFY messageChanged)
-    Q_PROPERTY(QString userColor READ userColor CONSTANT)
     Q_PROPERTY(bool isAction READ isAction CONSTANT)
     Q_PROPERTY(bool isTopic READ isTopic CONSTANT)
     Q_PROPERTY(bool isCommand READ isCommand CONSTANT)
@@ -24,6 +22,8 @@ class IrcMessage : public QObject
     // Nick quoted by a command, as in "#info <Jolla> answer"
     Q_PROPERTY(QString quotedNick READ quotedNick CONSTANT)
     Q_PROPERTY(bool isJolla READ isJolla CONSTANT)
+    // Anchor of the line in the published log, for deep links
+    Q_PROPERTY(int logLine READ logLine CONSTANT)
 
 public:
     explicit IrcMessage(const QString &timestamp, const QString &username,
@@ -33,7 +33,6 @@ public:
     QString username() const { return m_username; }
     QString message() const { return m_message; }
     QString richMessage() const { return m_richMessage; }
-    QString userColor() const { return m_userColor; }
     bool isAction() const { return m_isAction; }
     bool isTopic() const { return m_isTopic; }
     bool isCommand() const { return m_isCommand; }
@@ -42,13 +41,13 @@ public:
     QString richBody() const { return m_richBody; }
     QString quotedNick() const { return m_quotedNick; }
     bool isJolla() const;
+    int logLine() const { return m_logLine; }
 
     void setIsAction(bool isAction) { m_isAction = isAction; }
+    void setLogLine(int line) { m_logLine = line; }
     // Meetbot wraps long "#info" quotes over several lines: glue them back
     void appendBody(const QString &text);
     bool continues(const IrcMessage *previous) const;
-
-    static QString generateColorForUsername(const QString &username);
 
 signals:
     void messageChanged();
@@ -58,7 +57,6 @@ private:
     QString m_username;
     QString m_message;
     QString m_richMessage;
-    QString m_userColor;
     QString m_command;
     QString m_body;
     QString m_richBody;
@@ -66,6 +64,7 @@ private:
     bool m_isAction;
     bool m_isTopic;
     bool m_isCommand;
+    int m_logLine;
     // Line lengths of the merged block, used to tell a forced wrap from a
     // deliberate line break
     int m_lastLineLength;

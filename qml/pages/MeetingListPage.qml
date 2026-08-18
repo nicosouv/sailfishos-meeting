@@ -149,6 +149,24 @@ Page {
                 id: delegate
                 contentHeight: Theme.itemSizeLarge
 
+                menu: ContextMenu {
+                    MenuItem {
+                        text: qsTr("Meeting summary")
+                        onClicked: pageStack.push(Qt.resolvedUrl("MeetingSummaryPage.qml"), {
+                            meeting: modelData
+                        })
+                    }
+                    MenuItem {
+                        text: meetingManager.isFavorite(modelData.filename)
+                              ? qsTr("Remove from favorites") : qsTr("Add to favorites")
+                        onClicked: meetingManager.toggleFavorite(modelData.filename)
+                    }
+                    MenuItem {
+                        text: qsTr("Copy link")
+                        onClicked: Clipboard.text = modelData.url
+                    }
+                }
+
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
                     x: Theme.horizontalPageMargin
@@ -197,7 +215,9 @@ Page {
 
                 onClicked: {
                     pageStack.push(Qt.resolvedUrl("MeetingLogPage.qml"), {
-                        meeting: modelData
+                        meeting: modelData,
+                        siblings: listView.model,
+                        siblingIndex: index
                     })
                 }
             }

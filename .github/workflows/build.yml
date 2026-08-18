@@ -10,8 +10,30 @@ env:
   SAILFISH_RELEASE: '4.5.0.18'
 
 jobs:
+  tests:
+    name: Parser tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Install Qt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qtbase5-dev qtdeclarative5-dev qtbase5-dev-tools qt5-qmake
+
+      - name: Build and run
+        working-directory: tests
+        run: |
+          qmake tst_parsing.pro
+          make
+          ./tst_parsing
+
   build:
     name: Build RPM for ${{ matrix.arch }}
+    needs: tests
     runs-on: ubuntu-latest
 
     strategy:

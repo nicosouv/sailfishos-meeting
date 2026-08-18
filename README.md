@@ -5,15 +5,17 @@ A native Sailfish OS application for browsing and reading Sailfish OS community 
 ## Features
 
 - Browse meetings by year (auto-detected from the server), Mer and Sailfish OS series merged
-- View meeting summaries with topics, participants, and action items
+- Meeting summary page: action items, decisions and attendance, each entry linking to its log line
 - Read full IRC conversation logs with colorized nicks and avatars
 - Selectable display styles for meeting notes (`#info`, `#topic`...) and for the conversation
 - Wrapped `#info <nick>` quotes are joined back into readable paragraphs, Jolla answers highlighted
 - Global search and aggregated `#action`/`#agreed` items across a year
-- Filter log messages by participant, highlight your own nick
+- Filter log messages by participant or keep only the meeting notes
+- Highlight your own nick and the people you follow
+- Copy a link to a single log line
 - Favorites, read/unread tracking, meeting statistics
 - Next meeting date with calendar export (30 min reminder) and agenda link
-- Offline reading of previously loaded meetings (disk cache)
+- Offline reading of previously loaded meetings, with storage usage and clearing in the settings
 - Native Silica UI, French and German translations
 - Support for all Sailfish OS device orientations
 

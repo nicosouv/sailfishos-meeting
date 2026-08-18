@@ -1,5 +1,4 @@
 #include "ircmessage.h"
-#include <QCryptographicHash>
 #include <QRegularExpression>
 
 // Quotes pasted into meetbot come pre-wrapped around 60 to 75 characters.
@@ -31,10 +30,10 @@ IrcMessage::IrcMessage(const QString &timestamp, const QString &username,
     , m_isAction(false)
     , m_isTopic(false)
     , m_isCommand(false)
+    , m_logLine(0)
     , m_lastLineLength(0)
     , m_maxLineLength(0)
 {
-    m_userColor = generateColorForUsername(username);
     m_richMessage = buildRichMessage(message);
     parseMessageType();
     m_richBody = buildRichMessage(m_body);
@@ -145,36 +144,4 @@ void IrcMessage::appendBody(const QString &text)
     m_richBody = buildRichMessage(m_body);
     m_richMessage = buildRichMessage(m_message);
     emit messageChanged();
-}
-
-QString IrcMessage::generateColorForUsername(const QString &username)
-{
-    if (username.isEmpty()) {
-        return "#808080"; // Gray for system messages
-    }
-
-    // Generate a consistent color for each username using hash
-    QByteArray hash = QCryptographicHash::hash(username.toUtf8(), QCryptographicHash::Md5);
-
-    // Use first 3 bytes for RGB
-    int r = static_cast<unsigned char>(hash[0]);
-    int g = static_cast<unsigned char>(hash[1]);
-    int b = static_cast<unsigned char>(hash[2]);
-
-    // Ensure colors are not too dark (minimum brightness)
-    int minBrightness = 80;
-    if (r < minBrightness) r += minBrightness;
-    if (g < minBrightness) g += minBrightness;
-    if (b < minBrightness) b += minBrightness;
-
-    // Ensure colors are not too bright (maximum brightness)
-    int maxBrightness = 200;
-    if (r > maxBrightness) r = maxBrightness;
-    if (g > maxBrightness) g = maxBrightness;
-    if (b > maxBrightness) b = maxBrightness;
-
-    return QString("#%1%2%3")
-        .arg(r, 2, 16, QChar('0'))
-        .arg(g, 2, 16, QChar('0'))
-        .arg(b, 2, 16, QChar('0'));
 }

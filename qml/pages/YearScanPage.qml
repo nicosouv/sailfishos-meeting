@@ -9,6 +9,7 @@ Page {
     property var scanResults: []
     property bool scanning: false
     property bool scanned: false
+    property bool truncated: false
     property int progressDone: 0
     property int progressTotal: 0
 
@@ -30,6 +31,9 @@ Page {
         }
     }
 
+    // Leaving the page stops the downloads instead of letting them run on
+    Component.onDestruction: meetingManager.cancelScan()
+
     Connections {
         target: meetingManager
         onYearScanProgress: {
@@ -37,6 +41,8 @@ Page {
             progressTotal = total
         }
         onYearScanResults: {
+            // "truncated" alone would resolve to the signal argument
+            page.truncated = truncated
             scanResults = results
             scanning = false
             scanned = true
@@ -77,6 +83,23 @@ Page {
                 maximumValue: progressTotal > 0 ? progressTotal : 1
                 value: progressDone
                 label: qsTr("Scanning meeting %1 of %2").arg(progressDone).arg(progressTotal)
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: scanning
+                text: qsTr("Stop")
+                onClicked: meetingManager.cancelScan()
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                visible: truncated
+                text: qsTr("Too many results, only the first ones are shown")
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.highlightColor
+                wrapMode: Text.Wrap
             }
 
             Label {

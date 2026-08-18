@@ -136,6 +136,22 @@
         <source>Mark meetings as favorites to see them here</source>
         <translation>Markiere Treffen als Favoriten, um sie hier zu sehen</translation>
     </message>
+    <message>
+        <source>Meeting summary</source>
+        <translation>Zusammenfassung</translation>
+    </message>
+    <message>
+        <source>Remove from favorites</source>
+        <translation>Aus Favoriten entfernen</translation>
+    </message>
+    <message>
+        <source>Add to favorites</source>
+        <translation>Zu Favoriten hinzufügen</translation>
+    </message>
+    <message>
+        <source>Copy link</source>
+        <translation>Link kopieren</translation>
+    </message>
 </context>
 <context>
     <name>MeetingLogPage</name>
@@ -203,6 +219,54 @@
         <source>Jump to Topic</source>
         <translation>Zum Thema springen</translation>
     </message>
+    <message>
+        <source>Meeting summary</source>
+        <translation>Zusammenfassung</translation>
+    </message>
+    <message>
+        <source>Show whole conversation</source>
+        <translation>Ganze Unterhaltung anzeigen</translation>
+    </message>
+    <message>
+        <source>Show meeting notes only</source>
+        <translation>Nur Notizen anzeigen</translation>
+    </message>
+    <message>
+        <source>Older meeting</source>
+        <translation>Älteres Treffen</translation>
+    </message>
+    <message>
+        <source>Newer meeting</source>
+        <translation>Neueres Treffen</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Copy link to this line</source>
+        <translation>Link zu dieser Zeile kopieren</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>Text kopieren</translation>
+    </message>
+    <message>
+        <source>Only %1</source>
+        <translation>Nur %1</translation>
+    </message>
+    <message>
+        <source>Clear filter</source>
+        <translation>Filter entfernen</translation>
+    </message>
+    <message>
+        <source>No meeting notes in this log</source>
+        <translation>Keine Notizen in diesem Protokoll</translation>
+    </message>
+    <message>
+        <source>No message matches</source>
+        <translation>Keine passende Nachricht</translation>
+    </message>
 </context>
 <context>
     <name>MeetingSummaryPage</name>
@@ -225,6 +289,42 @@
     <message>
         <source>No items discussed</source>
         <translation>Keine Punkte besprochen</translation>
+    </message>
+    <message>
+        <source>Read full log</source>
+        <translation>Vollständiges Protokoll lesen</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation>Zusammenfassung</translation>
+    </message>
+    <message>
+        <source>Chaired by %1, %2 to %3 UTC</source>
+        <translation>Geleitet von %1, %2 bis %3 UTC</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <source>Action items</source>
+        <translation>Aktionspunkte</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Notizen</translation>
+    </message>
+    <message>
+        <source>People present</source>
+        <translation>Anwesende</translation>
+    </message>
+    <message>
+        <source>%1 lines</source>
+        <translation>%1 Zeilen</translation>
+    </message>
+    <message>
+        <source>No summary published for this meeting</source>
+        <translation>Für dieses Treffen wurde keine Zusammenfassung veröffentlicht</translation>
     </message>
 </context>
 <context>
@@ -309,6 +409,50 @@
         <source>Let&apos;s see how far it goes, we already have Go in good shape.</source>
         <translation>Mal sehen, wie weit es geht, Go ist bereits in gutem Zustand.</translation>
     </message>
+    <message>
+        <source>Followed nicks</source>
+        <translation>Verfolgte Nicks</translation>
+    </message>
+    <message>
+        <source>nick, other nick</source>
+        <translation>Nick, anderer Nick</translation>
+    </message>
+    <message>
+        <source>Comma separated, highlighted like your own nick</source>
+        <translation>Kommagetrennt, hervorgehoben wie der eigene Nick</translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation>Speicher</translation>
+    </message>
+    <message>
+        <source>Downloaded meetings and settings take %1</source>
+        <translation>Heruntergeladene Treffen und Einstellungen belegen %1</translation>
+    </message>
+    <message>
+        <source>Meetings are kept on the device so they can be read offline. Clearing them frees space, they are downloaded again when needed.</source>
+        <translation>Treffen werden für das Offline-Lesen auf dem Gerät behalten. Das Löschen schafft Platz, sie werden bei Bedarf erneut geladen.</translation>
+    </message>
+    <message>
+        <source>Clear downloaded meetings</source>
+        <translation>Heruntergeladene Treffen löschen</translation>
+    </message>
+    <message>
+        <source>Clearing downloaded meetings</source>
+        <translation>Heruntergeladene Treffen werden gelöscht</translation>
+    </message>
+    <message>
+        <source>Clear favorites and read status</source>
+        <translation>Favoriten und Lesestatus löschen</translation>
+    </message>
+    <message>
+        <source>Clearing favorites and read status</source>
+        <translation>Favoriten und Lesestatus werden gelöscht</translation>
+    </message>
+    <message>
+        <source>Version %1</source>
+        <translation>Version %1</translation>
+    </message>
 </context>
 <context>
     <name>YearScanPage</name>
@@ -354,6 +498,14 @@
     <message>
         <source>Enter a word or a nickname</source>
         <translation>Wort oder Nickname eingeben</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Anhalten</translation>
+    </message>
+    <message>
+        <source>Too many results, only the first ones are shown</source>
+        <translation>Zu viele Ergebnisse, nur die ersten werden angezeigt</translation>
     </message>
 </context>
 <context>

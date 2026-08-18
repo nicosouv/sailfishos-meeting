@@ -7,6 +7,14 @@ Page {
 
     allowedOrientations: Orientation.All
 
+    property string storageSize: ""
+
+    onStatusChanged: {
+        if (status === PageStatus.Activating) {
+            storageSize = meetingManager.storageSize()
+        }
+    }
+
     // Fake messages used by the live previews
     readonly property var sampleCommand: ({
         command: "info",
@@ -68,6 +76,8 @@ Page {
         richMessage: qsTr("Let's see how far it goes, we already have Go in good shape.")
     })
 
+    RemorsePopup { id: clearPopup }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height + Theme.paddingLarge
@@ -82,6 +92,7 @@ Page {
             }
 
             TextField {
+                id: nickField
                 width: parent.width
                 label: qsTr("My nick")
                 placeholderText: qsTr("Your IRC nickname")
@@ -89,6 +100,19 @@ Page {
                 description: qsTr("Messages mentioning this nick are highlighted in meeting logs")
 
                 onTextChanged: meetingManager.myNick = text
+
+                EnterKey.iconSource: "image://theme/icon-m-enter-close"
+                EnterKey.onClicked: focus = false
+            }
+
+            TextField {
+                width: parent.width
+                label: qsTr("Followed nicks")
+                placeholderText: qsTr("nick, other nick")
+                text: meetingManager.watchedNicks
+                description: qsTr("Comma separated, highlighted like your own nick")
+
+                onTextChanged: meetingManager.watchedNicks = text
 
                 EnterKey.iconSource: "image://theme/icon-m-enter-close"
                 EnterKey.onClicked: focus = false
@@ -156,6 +180,56 @@ Page {
                 width: parent.width
                 message: page.sampleAnswer
                 style: meetingManager.chatStyle
+            }
+
+            SectionHeader {
+                text: qsTr("Storage")
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Downloaded meetings and settings take %1").arg(page.storageSize)
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
+            }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Meetings are kept on the device so they can be read offline. Clearing them frees space, they are downloaded again when needed.")
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                wrapMode: Text.Wrap
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Clear downloaded meetings")
+                onClicked: clearPopup.execute(qsTr("Clearing downloaded meetings"), function() {
+                    meetingManager.clearCache()
+                    page.storageSize = meetingManager.storageSize()
+                })
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Clear favorites and read status")
+                onClicked: clearPopup.execute(qsTr("Clearing favorites and read status"), function() {
+                    meetingManager.clearHistory()
+                    page.storageSize = meetingManager.storageSize()
+                })
+            }
+
+            Item { width: 1; height: Theme.paddingLarge }
+
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Version %1").arg(meetingManager.appVersion)
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
             }
         }
 

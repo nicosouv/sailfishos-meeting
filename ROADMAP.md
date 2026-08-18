@@ -16,6 +16,7 @@
 - [x] Debounce message search
 - [x] Add QNetworkDiskCache (conditional GETs, 304 served from cache)
 - [ ] QAbstractListModel for large logs (needs build environment to validate)
+- [x] Year scan downloads in parallel and can be cancelled
 
 ## Phase 3 — Features
 
@@ -29,8 +30,16 @@
 - [x] French translation, refreshed German translation
 - [x] "My nick" setting to highlight own mentions in logs
 - [x] Agenda link: surface the forum thread found in the latest log
+- [x] Meeting summary page (action items, decisions, attendance) with deep links into the log
+- [x] Selectable display styles for meeting notes and conversation
+- [x] Mer meeting logs (2011-2020)
+- [x] Storage usage and data clearing in the settings
 - [ ] Publish on SailfishOS:Chum (external submission; binary lacks `harbour-` prefix, Jolla Store excluded)
 
 ## Phase 4 — CI / packaging
 
 - [x] Pin GitHub Actions to commit SHAs (`sailfish-build-rpm`, `action-gh-release`)
+
+## Phase 5 — Tests
+
+- [x] Parser tests on frozen meetbot fixtures, gating the RPM build in CI

@@ -39,7 +39,6 @@
 #include "meetingmanager.h"
 #include "meeting.h"
 #include "ircmessage.h"
-#include "meetingtopic.h"
 #include "meetingstatistics.h"
 
 int main(int argc, char *argv[])
@@ -53,7 +52,6 @@ int main(int argc, char *argv[])
     // Register QML types
     qmlRegisterUncreatableType<Meeting>("harbour.sailfishos.meetings", 1, 0, "Meeting", "Meeting objects are created by MeetingManager");
     qmlRegisterUncreatableType<IrcMessage>("harbour.sailfishos.meetings", 1, 0, "IrcMessage", "IrcMessage objects are created by MeetingManager");
-    qmlRegisterUncreatableType<MeetingTopic>("harbour.sailfishos.meetings", 1, 0, "MeetingTopic", "MeetingTopic objects are created by MeetingManager");
     qmlRegisterUncreatableType<MeetingStatistics>("harbour.sailfishos.meetings", 1, 0, "MeetingStatistics", "MeetingStatistics objects are created by MeetingManager");
     qmlRegisterType<MeetingManager>("harbour.sailfishos.meetings", 1, 0, "MeetingManager");
 

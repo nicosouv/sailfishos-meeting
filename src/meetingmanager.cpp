@@ -1,6 +1,5 @@
 #include "meetingmanager.h"
 #include "ircmessage.h"
-#include "meetingtopic.h"
 #include "meetingstatistics.h"
 #include "meetingsources.h"
 #include <QRegularExpression>
@@ -16,8 +15,14 @@
 #include <QQmlEngine>
 #include <QStandardPaths>
 #include <QDir>
+#include <QDirIterator>
+#include <QFileInfo>
 #include <algorithm>
 #include <functional>
+
+#ifndef APP_VERSION
+#define APP_VERSION "dev"
+#endif
 
 MeetingManager::MeetingManager(QObject *parent)
     : QObject(parent)
@@ -62,6 +67,24 @@ void MeetingManager::setMyNick(const QString &nick)
         m_settings->setValue("myNick", nick);
         emit myNickChanged();
     }
+}
+
+QString MeetingManager::watchedNicks() const
+{
+    return m_settings->value("watchedNicks").toString();
+}
+
+void MeetingManager::setWatchedNicks(const QString &nicks)
+{
+    if (watchedNicks() != nicks) {
+        m_settings->setValue("watchedNicks", nicks);
+        emit watchedNicksChanged();
+    }
+}
+
+QString MeetingManager::appVersion() const
+{
+    return QStringLiteral(APP_VERSION);
 }
 
 int MeetingManager::commandStyle() const
@@ -306,31 +329,163 @@ void MeetingManager::onHtmlContentReplyFinished()
     emit htmlContentLoaded(url, content);
 }
 
-QVariantList MeetingManager::parseTopicsFromHtml(const QString &html)
+static QString plainText(const QString &html)
 {
-    QVariantList topics;
+    QString text = html;
+    text.remove(QRegularExpression("<[^>]*>"));
+    text.replace("&nbsp;", " ");
+    text.replace("&lt;", "<");
+    text.replace("&gt;", ">");
+    text.replace("&quot;", "\"");
+    text.replace("&#39;", "'");
+    text.replace("&amp;", "&");
+    return text.simplified();
+}
 
-    // Extract topics from ordered list items
-    QRegularExpression topicRe("<li><a href=\"#topic-\\d+\">([^<]+)</a>");
-    QRegularExpressionMatchIterator i = topicRe.globalMatch(html);
+static QStringList orderedListItems(const QString &html, const QString &heading)
+{
+    QStringList items;
 
-    while (i.hasNext()) {
-        QRegularExpressionMatch match = i.next();
-        QString topicTitle = match.captured(1);
-
-        // Clean HTML entities
-        topicTitle.replace("&nbsp;", " ");
-        topicTitle.replace("&lt;", "<");
-        topicTitle.replace("&gt;", ">");
-        topicTitle.replace("&amp;", "&");
-
-        QStringList items;
-        MeetingTopic *topic = new MeetingTopic(topicTitle, items);
-        QQmlEngine::setObjectOwnership(topic, QQmlEngine::JavaScriptOwnership);
-        topics.append(QVariant::fromValue(topic));
+    QRegularExpression sectionRe("<h3>" + heading + "</h3>\\s*<ol>(.*?)</ol>",
+                                 QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpressionMatch section = sectionRe.match(html);
+    if (!section.hasMatch()) {
+        return items;
     }
 
-    return topics;
+    QRegularExpression itemRe("<li>(.*?)</li>", QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpressionMatchIterator i = itemRe.globalMatch(section.captured(1));
+    while (i.hasNext()) {
+        QString item = plainText(i.next().captured(1));
+        // Meetbot writes "(none)" when a section is empty
+        if (!item.isEmpty() && item != "(none)") {
+            items.append(item);
+        }
+    }
+
+    return items;
+}
+
+QVariantMap MeetingManager::parseSummaryFromHtml(const QString &html)
+{
+    QVariantMap summary;
+
+    QRegularExpression startedRe("Meeting started by (\\S+) at ([\\d:]+) UTC");
+    QRegularExpressionMatch started = startedRe.match(html);
+    summary["chair"] = started.hasMatch() ? started.captured(1) : QString();
+    summary["started"] = started.hasMatch() ? started.captured(2) : QString();
+
+    QRegularExpression endedRe("Meeting ended at ([\\d:]+) UTC");
+    QRegularExpressionMatch ended = endedRe.match(html);
+    summary["ended"] = ended.hasMatch() ? ended.captured(1) : QString();
+
+    // Every summary entry ends with its author and a link back to the log line:
+    // <li>...<span class="details">(<a href="...#l-42">nick</a>, 16:00:26)</span>
+    QString body = html.section("<h3>Meeting summary</h3>", 1).section("<h3>", 0, 0);
+    QRegularExpression entryRe("<li>(.*?)<span class=\"details\">\\("
+                               "<a href=['\"][^'\"]*#l-(\\d+)['\"]>([^<]*)</a>,\\s*([\\d:]+)\\)</span>",
+                               QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpression typeRe("<(?:b|span) class=\"([A-Z]+)\">(.*?)</(?:b|span)>",
+                              QRegularExpression::DotMatchesEverythingOption);
+
+    QVariantList entries;
+    QRegularExpressionMatchIterator i = entryRe.globalMatch(body);
+    while (i.hasNext()) {
+        QRegularExpressionMatch match = i.next();
+        QString content = match.captured(1);
+
+        QVariantMap entry;
+        QRegularExpressionMatch typed = typeRe.match(content);
+        if (typed.hasMatch()) {
+            entry["type"] = typed.captured(1);
+            entry["text"] = plainText(typed.captured(2));
+        } else {
+            // A bare link, logged with #link
+            entry["type"] = QStringLiteral("LINK");
+            entry["text"] = plainText(content);
+        }
+
+        if (entry["text"].toString().isEmpty()) {
+            continue;
+        }
+
+        entry["line"] = match.captured(2).toInt();
+        entry["nick"] = match.captured(3);
+        entry["time"] = match.captured(4);
+        entries.append(entry);
+    }
+    summary["entries"] = entries;
+
+    summary["actions"] = orderedListItems(html, "Action items");
+
+    // "People present (lines said)" holds "nick (42)" entries
+    QVariantList people;
+    QRegularExpression personRe("^(.*)\\s+\\((\\d+)\\)$");
+    for (const QString &item : orderedListItems(html, "People present \\(lines said\\)")) {
+        QRegularExpressionMatch person = personRe.match(item);
+        if (!person.hasMatch()) {
+            continue;
+        }
+        QVariantMap entry;
+        entry["nick"] = person.captured(1);
+        entry["lines"] = person.captured(2).toInt();
+        people.append(entry);
+    }
+    summary["people"] = people;
+
+    return summary;
+}
+
+QString MeetingManager::storageSize() const
+{
+    qint64 bytes = 0;
+
+    QStringList dirs;
+    dirs << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    dirs << QFileInfo(m_settings->fileName()).absolutePath();
+
+    QStringList visited;
+    for (const QString &dir : dirs) {
+        if (dir.isEmpty() || visited.contains(dir) || !QDir(dir).exists()) {
+            continue;
+        }
+        visited.append(dir);
+
+        QDirIterator it(dir, QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            it.next();
+            bytes += it.fileInfo().size();
+        }
+    }
+
+    if (bytes < 1024) {
+        return QString("%1 B").arg(bytes);
+    }
+    if (bytes < 1024 * 1024) {
+        return QString("%1 kB").arg(bytes / 1024.0, 0, 'f', 1);
+    }
+    return QString("%1 MB").arg(bytes / (1024.0 * 1024.0), 0, 'f', 1);
+}
+
+void MeetingManager::clearCache()
+{
+    if (QAbstractNetworkCache *cache = m_networkManager->cache()) {
+        cache->clear();
+    }
+    emit storageSizeChanged();
+}
+
+void MeetingManager::clearHistory()
+{
+    m_favorites.clear();
+    m_readMeetings.clear();
+    m_settings->remove("favorites");
+    m_settings->remove("readMeetings");
+    m_settings->sync();
+
+    emit favoritesChanged();
+    emit readStatusChanged();
+    emit storageSizeChanged();
 }
 
 QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
@@ -353,11 +508,16 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
 
     QRegularExpression tagRe("<[^>]*>");
     QRegularExpression lineRe("^(\\d{2}:\\d{2}:\\d{2})\\s+(.+)$");
+    // Each line carries its own anchor: <a name="l-42"></a>
+    QRegularExpression anchorRe("<a name=\"l-(\\d+)\"");
 
     for (const QString &line : lines) {
         // Parse IRC message format: HH:MM:SS <username> message
         // or: HH:MM:SS * username action
         // or: HH:MM:SS <username> #command
+
+        QRegularExpressionMatch anchor = anchorRe.match(line);
+        int logLine = anchor.hasMatch() ? anchor.captured(1).toInt() : 0;
 
         QString cleanLine = line;
         // Remove HTML tags
@@ -407,6 +567,7 @@ QVariantList MeetingManager::parseIrcMessagesFromHtml(const QString &html)
 
         IrcMessage *msg = new IrcMessage(timestamp, username, message);
         msg->setIsAction(isAction);
+        msg->setLogLine(logLine);
 
         // Meetbot wraps a quoted answer over several "#info <nick> ..." lines:
         // show them as a single readable paragraph
@@ -521,60 +682,115 @@ void MeetingManager::searchYear(int year, const QString &query)
     m_scanActive = true;
     m_scanQuery = query;
     m_scanResults.clear();
+    m_scanResultCount = 0;
+    m_scanTruncated = false;
     qDeleteAll(m_scanMeetings);
     m_scanMeetings.clear();
-    m_scanIndex = 0;
+    m_scanNextIndex = 0;
+    m_scanDone = 0;
+    m_scanPending = 0;
     setError("");
 
     fetchYearIndexes(year, [this](const QString &html, const QString &error) {
+        if (!m_scanActive) {
+            return; // Cancelled while the index was loading
+        }
+
         if (!error.isEmpty()) {
             setError(error);
-            m_scanActive = false;
-            emit yearScanResults(QVariantList());
+            finishScan();
             return;
         }
 
         m_scanMeetings = parseMeetingList(html);
         emit yearScanProgress(0, m_scanMeetings.count());
-        fetchNextScanLog();
+        fetchMoreScanLogs();
     });
 }
 
-void MeetingManager::fetchNextScanLog()
+void MeetingManager::cancelScan()
 {
-    if (m_scanIndex >= m_scanMeetings.count()) {
-        m_scanActive = false;
-        emit yearScanResults(m_scanResults);
-        qDeleteAll(m_scanMeetings);
-        m_scanMeetings.clear();
+    if (!m_scanActive) {
         return;
     }
 
-    Meeting *meeting = m_scanMeetings.at(m_scanIndex);
-    QNetworkRequest request(QUrl(meeting->logUrl()));
-    // Past logs are immutable: serve straight from the disk cache when possible
-    request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
-    QNetworkReply *reply = m_networkManager->get(request);
-    connect(reply, &QNetworkReply::finished, this, &MeetingManager::onScanLogReplyFinished);
+    m_scanActive = false;
+    for (QNetworkReply *reply : m_scanReplies) {
+        reply->abort();
+    }
+    m_scanReplies.clear();
+    m_scanPending = 0;
+    m_scanNextIndex = m_scanMeetings.count();
+
+    finishScan();
 }
 
-void MeetingManager::onScanLogReplyFinished()
+void MeetingManager::fetchMoreScanLogs()
 {
-    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-    if (!reply) return;
+    // A year holds a couple of dozen logs: fetch a few at a time so a scan
+    // over a whole year does not take a minute on a phone connection
+    static const int MaxParallelScans = 4;
 
-    if (reply->error() == QNetworkReply::NoError && m_scanIndex < m_scanMeetings.count()) {
-        QString html = QString::fromUtf8(reply->readAll());
-        scanLogContent(html, m_scanMeetings.at(m_scanIndex));
+    while (m_scanActive
+           && m_scanPending < MaxParallelScans
+           && m_scanNextIndex < m_scanMeetings.count()) {
+        const int index = m_scanNextIndex++;
+
+        QNetworkRequest request(QUrl(m_scanMeetings.at(index)->logUrl()));
+        // Past logs are immutable: serve straight from the disk cache when possible
+        request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache);
+
+        QNetworkReply *reply = m_networkManager->get(request);
+        m_scanReplies.append(reply);
+        m_scanPending++;
+
+        connect(reply, &QNetworkReply::finished, this, [this, reply, index]() {
+            onScanLogFinished(reply, index);
+        });
+    }
+
+    if (m_scanPending == 0) {
+        finishScan();
+    }
+}
+
+void MeetingManager::onScanLogFinished(QNetworkReply *reply, int index)
+{
+    m_scanReplies.removeAll(reply);
+    m_scanPending--;
+
+    if (m_scanActive && reply->error() == QNetworkReply::NoError) {
+        scanLogContent(QString::fromUtf8(reply->readAll()), m_scanMeetings.at(index), index);
     }
     reply->deleteLater();
 
-    m_scanIndex++;
-    emit yearScanProgress(m_scanIndex, m_scanMeetings.count());
-    fetchNextScanLog();
+    if (!m_scanActive) {
+        return; // Cancelled: finishScan() already reported what we had
+    }
+
+    m_scanDone++;
+    emit yearScanProgress(m_scanDone, m_scanMeetings.count());
+    fetchMoreScanLogs();
 }
 
-void MeetingManager::scanLogContent(const QString &html, Meeting *meeting)
+void MeetingManager::finishScan()
+{
+    m_scanActive = false;
+
+    // Logs come back out of order, restore the meeting order (newest first)
+    QVariantList results;
+    for (auto it = m_scanResults.constBegin(); it != m_scanResults.constEnd(); ++it) {
+        results.append(it.value());
+    }
+
+    emit yearScanResults(results, m_scanTruncated);
+
+    m_scanResults.clear();
+    qDeleteAll(m_scanMeetings);
+    m_scanMeetings.clear();
+}
+
+void MeetingManager::scanLogContent(const QString &html, Meeting *meeting, int index)
 {
     QRegularExpression preRe("<pre>(.*)</pre>", QRegularExpression::DotMatchesEverythingOption);
     QRegularExpressionMatch preMatch = preRe.match(html);
@@ -589,7 +805,8 @@ void MeetingManager::scanLogContent(const QString &html, Meeting *meeting)
     const int maxResults = 500;
 
     for (const QString &line : lines) {
-        if (m_scanResults.count() >= maxResults) {
+        if (m_scanResultCount >= maxResults) {
+            m_scanTruncated = true;
             return;
         }
 
@@ -638,7 +855,8 @@ void MeetingManager::scanLogContent(const QString &html, Meeting *meeting)
             result["timestamp"] = timestamp;
             result["username"] = username;
             result["message"] = message;
-            m_scanResults.append(result);
+            m_scanResults[index].append(result);
+            m_scanResultCount++;
         }
     }
 }

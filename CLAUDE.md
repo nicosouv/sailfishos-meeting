@@ -24,7 +24,7 @@ Sailfish OS application for browsing and reading Sailfish OS community meeting l
 **QML Frontend** (qml/pages/):
 - `YearSelectionPage.qml`: Initial page listing available years (2011+)
 - `MeetingListPage.qml`: Lists all meetings for selected year
-- `MeetingSummaryPage.qml`: Displays meeting summary (.html) with formatted content
+- `MeetingSummaryPage.qml`: Action items, decisions and attendance parsed from the summary (.html); entries link back to a log line
 - `MeetingLogPage.qml`: Displays full IRC log (.log.html), one delegate per message
 - `SettingsPage.qml`: Nick and display styles, with live previews
 
@@ -33,6 +33,16 @@ Sailfish OS application for browsing and reading Sailfish OS community meeting l
 - `ChatMessage.qml`: Renders a conversation line in the style chosen in the settings
 - Display styles are plain ints stored in QSettings via `MeetingManager.commandStyle` / `chatStyle`;
   the order of the options must match the ComboBox entries in `SettingsPage.qml`
+
+## Tests
+
+Parser tests run on a plain Qt 5 (no Sailfish SDK), and gate the RPM build in CI:
+
+```bash
+cd tests && qmake tst_parsing.pro && make && ./tst_parsing
+```
+
+Fixtures are inline excerpts of real meetbot pages, so the tests stay offline.
 
 ## Building
 

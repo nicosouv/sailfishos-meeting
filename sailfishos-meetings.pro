@@ -16,11 +16,15 @@ CONFIG += sailfishapp
 
 QT += network qml
 
+# Single source of truth for the version: the RPM spec, which the CI patches
+APP_VERSION = $$system(sed -n 's/^Version:[[:space:]]*//p' $$PWD/rpm/sailfishos-meetings.spec)
+isEmpty(APP_VERSION): APP_VERSION = dev
+DEFINES += APP_VERSION=\\\"$$APP_VERSION\\\"
+
 SOURCES += src/sailfishos-meetings.cpp \
     src/meetingmanager.cpp \
     src/meeting.cpp \
     src/ircmessage.cpp \
-    src/meetingtopic.cpp \
     src/meetingstatistics.cpp
 
 HEADERS += \
@@ -28,7 +32,6 @@ HEADERS += \
     src/meeting.h \
     src/meetingsources.h \
     src/ircmessage.h \
-    src/meetingtopic.h \
     src/meetingstatistics.h
 
 OTHER_FILES += qml/sailfishos-meetings.qml \
@@ -64,4 +67,6 @@ TRANSLATIONS += translations/sailfishos-meetings-de.ts \
     translations/sailfishos-meetings-fr.ts
 
 DISTFILES += \
-    rpm/sailfishos-meetings.changes
+    rpm/sailfishos-meetings.changes \
+    tests/tst_parsing.pro \
+    tests/tst_parsing.cpp

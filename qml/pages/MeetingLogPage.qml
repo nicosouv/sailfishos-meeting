@@ -7,6 +7,12 @@ Page {
     id: page
 
     property var meeting
+    // Meetings of the same year, to walk from one to the next
+    property var siblings: []
+    property int siblingIndex: -1
+    // Log line to scroll to, set when coming from the summary
+    property int jumpToLine: 0
+
     property string logContent: ""
     property var messages: []
     property var stats: null
@@ -14,12 +20,13 @@ Page {
     property bool isFavorite: false
     property string searchText: ""
     property string filterUser: ""
+    property bool notesOnly: false
     property var filteredMessages: messages
 
     allowedOrientations: Orientation.All
 
     function filterMessages() {
-        if (searchText === "" && filterUser === "") {
+        if (searchText === "" && filterUser === "" && !notesOnly) {
             filteredMessages = messages
             return
         }
@@ -27,6 +34,9 @@ Page {
         var searchLower = searchText.toLowerCase()
         for (var i = 0; i < messages.length; i++) {
             var msg = messages[i]
+            if (notesOnly && !msg.isCommand) {
+                continue
+            }
             // A nick can also appear as the author quoted by "#info <nick>"
             if (filterUser !== "" && msg.username !== filterUser && msg.quotedNick !== filterUser) {
                 continue
@@ -43,6 +53,64 @@ Page {
 
     function toggleUserFilter(name) {
         filterUser = (filterUser === name) ? "" : name
+    }
+
+    // My nick plus the nicks explicitly followed, as whole words only so that
+    // "Nico" does not light up every "Nicolas"
+    property var highlightedNicks: {
+        var nicks = []
+        var all = (meetingManager.myNick + "," + meetingManager.watchedNicks).split(",")
+        for (var i = 0; i < all.length; i++) {
+            var nick = all[i].trim().toLowerCase()
+            if (nick !== "") nicks.push(nick)
+        }
+        return nicks
+    }
+
+    function mentions(text) {
+        if (highlightedNicks.length === 0 || !text) return false
+        var words = text.toLowerCase().split(/[^a-z0-9_\[\]{}\\^`|-]+/)
+        for (var i = 0; i < words.length; i++) {
+            if (highlightedNicks.indexOf(words[i]) !== -1) return true
+        }
+        return false
+    }
+
+    function messageLink(message) {
+        return message.logLine > 0 ? meeting.logUrl + "#l-" + message.logLine : meeting.logUrl
+    }
+
+    // Jump to the log line an entry of the summary points at
+    function scrollToLine(line) {
+        if (line <= 0) return
+        for (var i = 0; i < filteredMessages.length; i++) {
+            if (filteredMessages[i].logLine >= line) {
+                listView.positionViewAtIndex(i, ListView.Beginning)
+                return
+            }
+        }
+    }
+
+    function openSibling(offset) {
+        var next = siblingIndex + offset
+        if (next < 0 || next >= siblings.length) return
+        pageStack.replace(Qt.resolvedUrl("MeetingLogPage.qml"), {
+            meeting: siblings[next],
+            siblings: siblings,
+            siblingIndex: next
+        })
+    }
+
+    function reload() {
+        logContent = ""
+        messages = []
+        stats = null
+        topicIndices = []
+        searchText = ""
+        searchField.text = ""
+        filterUser = ""
+        notesOnly = false
+        meetingManager.fetchHtmlContent(meeting.logUrl)
     }
 
     Component.onCompleted: {
@@ -71,6 +139,7 @@ Page {
             }
             topicIndices = topics
             filterMessages()
+            scrollToLine(jumpToLine)
         }
         onFavoritesChanged: {
             isFavorite = meetingManager.isFavorite(meeting.filename)
@@ -82,6 +151,10 @@ Page {
     }
 
     onFilterUserChanged: {
+        filterMessages()
+    }
+
+    onNotesOnlyChanged: {
         filterMessages()
     }
 
@@ -101,8 +174,12 @@ Page {
                 onClicked: meetingManager.toggleFavorite(meeting.filename)
             }
             MenuItem {
-                text: qsTr("Copy link")
-                onClicked: Clipboard.text = meeting.url
+                text: qsTr("Meeting summary")
+                onClicked: pageStack.push(Qt.resolvedUrl("MeetingSummaryPage.qml"), { meeting: meeting })
+            }
+            MenuItem {
+                text: notesOnly ? qsTr("Show whole conversation") : qsTr("Show meeting notes only")
+                onClicked: notesOnly = !notesOnly
             }
             MenuItem {
                 text: qsTr("Topics") + " (" + topicIndices.length + ")"
@@ -110,17 +187,18 @@ Page {
                 onClicked: topicPanel.open = true
             }
             MenuItem {
+                text: qsTr("Older meeting")
+                visible: siblingIndex >= 0 && siblingIndex < siblings.length - 1
+                onClicked: openSibling(1)
+            }
+            MenuItem {
+                text: qsTr("Newer meeting")
+                visible: siblingIndex > 0
+                onClicked: openSibling(-1)
+            }
+            MenuItem {
                 text: qsTr("Refresh")
-                onClicked: {
-                    logContent = ""
-                    messages = []
-                    stats = null
-                    topicIndices = []
-                    searchText = ""
-                    searchField.text = ""
-                    filterUser = ""
-                    meetingManager.fetchHtmlContent(meeting.logUrl)
-                }
+                onClicked: reload()
             }
         }
 
@@ -216,8 +294,29 @@ Page {
 
             BusyIndicator {
                 anchors.horizontalCenter: parent.horizontalCenter
-                running: logContent === "" && messages.length === 0
+                running: logContent === "" && messages.length === 0 && meetingManager.error === ""
                 size: BusyIndicatorSize.Large
+            }
+
+            Column {
+                width: parent.width
+                spacing: Theme.paddingMedium
+                visible: meetingManager.error !== "" && messages.length === 0
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    text: meetingManager.error
+                    color: Theme.errorColor
+                    font.pixelSize: Theme.fontSizeSmall
+                    wrapMode: Text.Wrap
+                }
+
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: qsTr("Retry")
+                    onClicked: reload()
+                }
             }
         }
 
@@ -233,12 +332,30 @@ Page {
             clip: true
             model: filteredMessages
 
-            delegate: Item {
+            delegate: ListItem {
                 id: delegateItem
                 width: listView.width
-                height: isCommand ? commandMessage.height : chatMessage.height
+                contentHeight: isCommand ? commandMessage.height : chatMessage.height
+                _backgroundColor: "transparent"
 
                 property bool isCommand: modelData.isCommand
+
+                menu: ContextMenu {
+                    MenuItem {
+                        text: qsTr("Copy link to this line")
+                        onClicked: Clipboard.text = messageLink(modelData)
+                    }
+                    MenuItem {
+                        text: qsTr("Copy text")
+                        onClicked: Clipboard.text = modelData.message
+                    }
+                    MenuItem {
+                        text: modelData.username !== "" && filterUser !== modelData.username
+                              ? qsTr("Only %1").arg(modelData.username)
+                              : qsTr("Clear filter")
+                        onClicked: toggleUserFilter(modelData.username)
+                    }
+                }
 
                 property bool showHeader: {
                     if (index === 0) return true
@@ -248,11 +365,7 @@ Page {
                     return prevMsg.username !== modelData.username || prevMsg.isCommand
                 }
 
-                property bool mentionsMe: {
-                    var nick = meetingManager.myNick
-                    if (nick === "" || !modelData.message) return false
-                    return modelData.message.toLowerCase().indexOf(nick.toLowerCase()) !== -1
-                }
+                property bool mentionsMe: page.mentions(modelData.message)
 
                 CommandMessage {
                     id: commandMessage
@@ -273,6 +386,11 @@ Page {
                     mentionsMe: delegateItem.mentionsMe
                     onNickClicked: toggleUserFilter(name)
                 }
+            }
+
+            ViewPlaceholder {
+                enabled: messages.length > 0 && filteredMessages.length === 0
+                text: notesOnly ? qsTr("No meeting notes in this log") : qsTr("No message matches")
             }
 
             VerticalScrollDecorator {}

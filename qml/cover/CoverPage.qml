@@ -32,7 +32,16 @@ import QtQuick 2.0
 import Sailfish.Silica 1.0
 
 CoverBackground {
+    id: cover
+
     property string nextMeetingDate: meetingManager.getNextMeetingDate()
+
+    CoverActionList {
+        CoverAction {
+            iconSource: "image://theme/icon-cover-refresh"
+            onTriggered: meetingManager.fetchNextMeetingDate()
+        }
+    }
 
     Connections {
         target: meetingManager
