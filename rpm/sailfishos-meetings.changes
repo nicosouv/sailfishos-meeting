@@ -8,6 +8,11 @@
 # * date Author's Name <author's email> version-release
 # - Summary of changes
 
+* Tue Aug 18 2026 Poulpe <poulpe@example.com> 2.2.1-1
+- Show the meeting date as the log page title
+- Highlight search matches inside the messages
+- Show a countdown to the next meeting on the cover
+
 * Tue Aug 18 2026 Poulpe <poulpe@example.com> 2.2.0-1
 - Add the meeting summary page: action items, decisions and who was present
 - Tap a summary entry to jump to that line of the log
