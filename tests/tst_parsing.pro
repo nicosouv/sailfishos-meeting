@@ -5,8 +5,8 @@ TARGET = tst_parsing
 CONFIG += testcase console c++11
 CONFIG -= app_bundle
 
-QT += testlib network qml
-QT -= gui
+# QtGui is needed for QDesktopServices, the tests still run headless
+QT += testlib network qml gui
 
 INCLUDEPATH += $$PWD/../src
 

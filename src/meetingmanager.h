@@ -44,7 +44,7 @@ public:
     Q_INVOKABLE void searchYear(int year, const QString &query);
     Q_INVOKABLE void cancelScan();
     Q_INVOKABLE Meeting* createMeeting(const QString &filename);
-    Q_INVOKABLE QVariantMap parseSummaryFromHtml(const QString &html);
+    Q_INVOKABLE QVariantMap parseSummaryFromHtml(const QString &rawHtml);
     Q_INVOKABLE QVariantList parseIrcMessagesFromHtml(const QString &html);
     Q_INVOKABLE QString storageSize() const;
     Q_INVOKABLE void clearCache();

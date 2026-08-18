@@ -366,9 +366,14 @@ static QStringList orderedListItems(const QString &html, const QString &heading)
     return items;
 }
 
-QVariantMap MeetingManager::parseSummaryFromHtml(const QString &html)
+QVariantMap MeetingManager::parseSummaryFromHtml(const QString &rawHtml)
 {
     QVariantMap summary;
+
+    // The published pages wrap their markup over several lines, even in the
+    // middle of a tag: collapse whitespace before matching anything
+    QString html = rawHtml;
+    html.replace(QRegularExpression("\\s+"), " ");
 
     QRegularExpression startedRe("Meeting started by (\\S+) at ([\\d:]+) UTC");
     QRegularExpressionMatch started = startedRe.match(html);
