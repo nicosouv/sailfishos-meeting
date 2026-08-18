@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import "../components"
+import "TextMarkup.js" as TextMarkup
 
 /*
  * Renders a meetbot command (#info, #topic, #action...) in the style picked
@@ -15,6 +16,8 @@ Item {
 
     property var message
     property int style: 0
+    // Search term to point out inside the message
+    property string highlight: ""
 
     signal nickClicked(string name)
 
@@ -22,7 +25,9 @@ Item {
     readonly property string quotedNick: message && message.quotedNick ? message.quotedNick : ""
     readonly property bool isJolla: message ? message.isJolla === true : false
     readonly property bool isTopic: message ? message.isTopic === true : false
-    readonly property string bodyText: message ? message.richBody : ""
+    readonly property string bodyText: message
+        ? TextMarkup.markMatches(message.richBody, highlight, Theme.highlightColor)
+        : ""
     readonly property string timestamp: message ? message.timestamp : ""
 
     readonly property color accentColor: {

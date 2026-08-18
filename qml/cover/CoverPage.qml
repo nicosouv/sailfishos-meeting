@@ -35,6 +35,51 @@ CoverBackground {
     id: cover
 
     property string nextMeetingDate: meetingManager.getNextMeetingDate()
+    property string nextMeetingRaw: meetingManager.getNextMeetingDateRaw()
+    property string countdown: ""
+
+    // "2026-08-13T1600Z" -> how many nights away the meeting is
+    function updateCountdown() {
+        if (nextMeetingRaw === "") {
+            countdown = ""
+            return
+        }
+
+        var target = new Date(nextMeetingRaw.replace(/T(\d{2})(\d{2})Z/, "T$1:$2:00Z"))
+        if (isNaN(target.getTime())) {
+            countdown = ""
+            return
+        }
+
+        var now = new Date()
+        if (target.getTime() <= now.getTime()) {
+            countdown = qsTr("now")
+            return
+        }
+
+        var midnight = function(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+        }
+        var days = Math.round((midnight(target) - midnight(now)) / 86400000)
+
+        if (days <= 0) {
+            countdown = qsTr("today")
+        } else if (days === 1) {
+            countdown = qsTr("tomorrow")
+        } else {
+            countdown = qsTr("in %n day(s)", "", days)
+        }
+    }
+
+    Component.onCompleted: updateCountdown()
+
+    // The cover outlives the day it was drawn on
+    Timer {
+        interval: 15 * 60 * 1000
+        running: true
+        repeat: true
+        onTriggered: updateCountdown()
+    }
 
     CoverActionList {
         CoverAction {
@@ -47,6 +92,8 @@ CoverBackground {
         target: meetingManager
         onNextMeetingDateChanged: {
             nextMeetingDate = date
+            nextMeetingRaw = rawDate
+            updateCountdown()
         }
     }
 
@@ -71,6 +118,14 @@ CoverBackground {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Next Meeting")
                 font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: countdown !== ""
+                text: countdown
+                font.pixelSize: Theme.fontSizeLarge
                 font.bold: true
                 color: Theme.highlightColor
             }
@@ -90,8 +145,8 @@ CoverBackground {
                     }
                     return nextMeetingDate
                 }
-                font.pixelSize: Theme.fontSizeMedium
-                font.bold: true
+                font.pixelSize: Theme.fontSizeSmall
+                font.bold: countdown === ""
                 color: Theme.primaryColor
                 wrapMode: Text.Wrap
                 horizontalAlignment: Text.AlignHCenter

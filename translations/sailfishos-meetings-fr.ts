@@ -90,6 +90,25 @@
         <source>No upcoming meeting</source>
         <translation>Aucune réunion à venir</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation>maintenant</translation>
+    </message>
+    <message>
+        <source>today</source>
+        <translation>aujourd&apos;hui</translation>
+    </message>
+    <message>
+        <source>tomorrow</source>
+        <translation>demain</translation>
+    </message>
+    <message numerus="yes">
+        <source>in %n day(s)</source>
+        <translation>
+            <numerusform>dans %n jour</numerusform>
+            <numerusform>dans %n jours</numerusform>
+        </translation>
+    </message>
 </context>
 <context>
     <name>MeetingListPage</name>

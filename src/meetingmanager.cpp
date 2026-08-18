@@ -1033,6 +1033,11 @@ QString MeetingManager::getNextMeetingDate() const
     return m_settings->value("nextMeetingDate").toString();
 }
 
+QString MeetingManager::getNextMeetingDateRaw() const
+{
+    return m_settings->value("nextMeetingDateRaw").toString();
+}
+
 QString MeetingManager::getNextMeetingAgendaUrl() const
 {
     return m_settings->value("nextMeetingAgendaUrl").toString();

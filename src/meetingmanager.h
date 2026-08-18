@@ -57,6 +57,7 @@ public:
     Q_INVOKABLE void markAsRead(const QString &meetingId);
     Q_INVOKABLE void fetchNextMeetingDate();
     Q_INVOKABLE QString getNextMeetingDate() const;
+    Q_INVOKABLE QString getNextMeetingDateRaw() const;
     Q_INVOKABLE QString getNextMeetingAgendaUrl() const;
     Q_INVOKABLE void saveIcsFile(const QString &content);
 

@@ -218,16 +218,8 @@ Page {
             width: parent.width
 
             PageHeader {
-                title: qsTr("IRC Log")
-            }
-
-            Label {
-                x: Theme.horizontalPageMargin
-                width: parent.width - 2 * Theme.horizontalPageMargin
-                text: meeting.seriesName + " — " + meeting.date + " - " + meeting.time
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.secondaryColor
-                truncationMode: TruncationMode.Fade
+                title: meeting.date
+                description: meeting.seriesName + " — " + meeting.time
             }
 
             // Search field
@@ -373,6 +365,7 @@ Page {
                     visible: delegateItem.isCommand
                     message: delegateItem.isCommand ? modelData : null
                     style: meetingManager.commandStyle
+                    highlight: searchText
                     onNickClicked: toggleUserFilter(name)
                 }
 
@@ -382,6 +375,7 @@ Page {
                     visible: !delegateItem.isCommand
                     message: delegateItem.isCommand ? null : modelData
                     style: meetingManager.chatStyle
+                    highlight: searchText
                     showHeader: delegateItem.showHeader
                     mentionsMe: delegateItem.mentionsMe
                     onNickClicked: toggleUserFilter(name)

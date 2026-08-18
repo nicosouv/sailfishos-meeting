@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import "../components"
+import "TextMarkup.js" as TextMarkup
 
 /*
  * Renders a regular conversation line in the style picked by the user in the
@@ -17,13 +18,17 @@ Item {
     property int style: 0
     property bool showHeader: true
     property bool mentionsMe: false
+    // Search term to point out inside the message
+    property string highlight: ""
 
     signal nickClicked(string name)
 
     readonly property string nick: message ? message.username : ""
     readonly property bool isSystem: nick === ""
     readonly property bool isAction: message ? message.isAction === true : false
-    readonly property string bodyText: message ? message.richMessage : ""
+    readonly property string bodyText: message
+        ? TextMarkup.markMatches(message.richMessage, highlight, Theme.highlightColor)
+        : ""
     readonly property string timestamp: message ? message.timestamp : ""
     readonly property color nickColor: isSystem ? Theme.secondaryColor : UserColorManager.getColorForUser(nick)
     readonly property color textColor: Theme.primaryColor

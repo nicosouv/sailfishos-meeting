@@ -47,6 +47,7 @@ OTHER_FILES += qml/sailfishos-meetings.qml \
     qml/components/UserColorManager.qml \
     qml/components/ChatMessage.qml \
     qml/components/CommandMessage.qml \
+    qml/components/TextMarkup.js \
     qml/components/qmldir \
     rpm/sailfishos-meetings.spec \
     rpm/sailfishos-meetings.yaml \
